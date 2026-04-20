@@ -89,7 +89,6 @@ FlowDesk CRM is a full-featured Customer Relationship Management system designed
 | Backend | Python, Django |
 | Database | MySQL |
 | Frontend | Bootstrap 5, jQuery, ApexCharts |
-| UI Components | Select2, SweetAlert2, DataTables, Quill Editor |
 | Email | Django Email (SMTP / Console) |
 | Auth | Django Auth + Custom Role System |
 

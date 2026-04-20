@@ -1,0 +1,554 @@
+{% extends 'base.html' %}
+{% block title %}Follow Ups{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Follow Ups</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Follow Ups</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#followupFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+
+            <div class="card stretch stretch-full">
+                <div class="card-body p-0">
+
+                    <!-- ================= SEARCH & FILTER ================= -->
+                    <div class="d-flex align-items-center justify-content-between px-3 py-3">
+                        <form method="GET" class="d-flex align-items-center gap-2" id="followupSearchForm">
+                            <label class="mb-0 fw-semibold">Search:</label>
+                            <input type="text"
+                                   name="q"
+                                   id="followupLiveSearchInput"
+                                   value="{{ request.GET.q }}"
+                                   class="form-control"
+                                   placeholder="Search by name / email / phone"
+                                   style="width:250px;height:38px;"
+                                   autocomplete="off">
+                            <button type="submit" class="btn btn-light-brand" style="height:38px;">
+                                <i class="feather-search"></i>
+                            </button>
+                        </form>
+
+                    </div>
+
+                    <div class="collapse border-top px-3 py-3" id="followupFilterPanel">
+                        <form method="GET" action="">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Date From</label>
+                                    <input type="date" name="date_from"
+                                        value="{{ request.GET.date_from }}"
+                                        class="form-control">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Date To</label>
+                                    <input type="date" name="date_to"
+                                        value="{{ request.GET.date_to }}"
+                                        class="form-control">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" class="form-control">
+                                        <option value="">All Status</option>
+                                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                                    <button class="btn btn-dark" type="submit">
+                                        Apply Filter
+                                    </button>
+                                    <a href="{% url 'followups' %}" class="btn btn-outline-secondary">
+                                        Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <form method="GET" class="d-flex align-items-center gap-2 px-3">
+                        {% for key, value in request.GET.items %}
+                            {% if key != 'per_page' and key != 'page' %}
+                                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endif %}
+                        {% endfor %}
+
+                        <label class="fw-semibold mb-0">Show</label>
+                        <select name="per_page"
+                                class="form-control"
+                                style="width:90px;"
+                                onchange="this.form.submit()">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        </select>
+                        <span class="fw-semibold">entries</span>
+                    </form>
+
+                    <!-- ================= TABLE ================= -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="followupList">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Course</th>
+                                    <th>Follow Up Status</th>
+                                    <th>Follow Up Date</th>
+                                    <th>Title</th>
+                                    <th>Notes</th>
+                                    <th>Assigned To</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for followup in followups %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="
+                                                width:32px;
+                                                height:32px;
+                                                border-radius:50%;
+                                                background:#4f46e5;
+                                                color:#fff;
+                                                display:flex;
+                                                align-items:center;
+                                                justify-content:center;
+                                                font-weight:600;
+                                            ">
+                                                {{ followup.lead.full_name|slice:":1"|upper }}
+                                            </div>
+                                            <span class="fw-semibold">
+                                                <a href="{% url 'lead_profile' followup.lead.id %}">{{ followup.lead.full_name }}</a>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>{{ followup.lead.mobile }}</div>
+                                        <small class="text-muted">{{ followup.lead.email }}</small>
+                                    </td>
+                                    <td>
+                                        {% with lead_courses=followup.lead.lead_courses.all %}
+                                            {% if lead_courses %}
+                                                {% for lc in lead_courses %}
+                                                    <div>{{ lc.course.course_name }}</div>
+                                                    <small class="text-muted">{{ lc.department.department_name }}</small>{% if not forloop.last %}<br>{% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <span class="status-badge
+                                            {% if followup.status == 'pending' %}status-pending
+                                            {% elif followup.status == 'completed' %}status-completed
+                                            {% else %}status-cancelled{% endif %}">
+                                            {{ followup.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div>{{ followup.followup_date|date:"d M Y" }}</div>
+                                        {% if followup.followup_time %}
+                                            <small class="text-muted">{{ followup.followup_time }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ followup.title }}</td>
+                                    <td>
+                                        <small>{{ followup.notes|default:"—"|truncatewords:10 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if followup.assigned_to %}
+                                            {{ followup.assigned_to.user.username }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div style="
+                                            display:flex;
+                                            justify-content:flex-end;
+                                            align-items:center;
+                                            gap:10px;
+                                            white-space:nowrap;
+                                        ">
+                                            <a href="{% url 'lead_profile' followup.lead.id %}" class="action-circle">
+                                                <i class="feather-eye"></i>
+                                            </a>
+                                            
+                                            {% if followup.status == 'pending' %}
+                                                <a href="{% url 'complete_followup' followup.id %}" class="action-circle" title="Complete">
+                                                    <i class="feather-check"></i>
+                                                </a>
+                                                <a href="{% url 'cancel_followup' followup.id %}" class="action-circle" title="Cancel">
+                                                    <i class="feather-x"></i>
+                                                </a>
+                                            {% elif followup.status == 'completed' or followup.status == 'cancelled' %}
+                                                <a href="{% url 'undo_followup' followup.id %}" class="action-circle" title="Undo" onclick="return confirm('Reset this follow-up to pending?')">
+                                                    <i class="feather-rotate-ccw"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        No follow-ups found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        {% if page_obj.paginator.num_pages > 1 %}
+                        <div class="pagination-row">
+                            <nav class="pagination-glass">
+                                <ul class="pagination pagination-modern mb-0">
+                                    {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                        href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                            ‹ Previous
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">‹ Previous</span>
+                                    </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                            <a class="page-link"
+                                            href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                                                {{ num }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                        href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                            Next ›
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next ›</span>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+
+                            <div class="pagination-info">
+                                Showing
+                                <strong>{{ page_obj.start_index }}</strong>
+                                –
+                                <strong>{{ page_obj.end_index }}</strong>
+                                of
+                                <strong>{{ paginator.count }}</strong>
+                                follow-ups
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+const followupLiveSearchInput = document.getElementById("followupLiveSearchInput");
+if (followupLiveSearchInput) {
+    const followupTableBody = document.querySelector("#followupList tbody");
+    let followupSearchTimeout;
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function truncateWords(value, limit) {
+        const words = String(value || "").trim().split(/\s+/).filter(Boolean);
+        if (words.length <= limit) {
+            return words.join(" ");
+        }
+        return words.slice(0, limit).join(" ") + "...";
+    }
+
+    followupLiveSearchInput.addEventListener("keyup", function () {
+        clearTimeout(followupSearchTimeout);
+        const query = this.value;
+
+        followupSearchTimeout = setTimeout(() => {
+            fetch("{% url 'followup_live_search' %}?q=" + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    followupTableBody.innerHTML = "";
+
+                    if (data.followups.length === 0) {
+                        followupTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    No follow-ups found
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    data.followups.forEach(followup => {
+                        const leadName = escapeHtml(followup.lead_name);
+                        const initial = leadName ? leadName.charAt(0).toUpperCase() : "";
+                        const contactEmail = followup.lead_email
+                            ? `<small class="text-muted">${escapeHtml(followup.lead_email)}</small>`
+                            : "";
+                        const courseHtml = followup.courses.length
+                            ? followup.courses.map(item => `
+                                <div>${escapeHtml(item.course)}</div>
+                                <small class="text-muted">${escapeHtml(item.department)}</small>
+                            `).join("<br>")
+                            : '<span class="text-muted">-</span>';
+                        const statusClass = followup.status === "pending"
+                            ? "status-pending"
+                            : followup.status === "completed"
+                                ? "status-completed"
+                                : "status-cancelled";
+                        const timeHtml = followup.followup_time
+                            ? `<small class="text-muted">${escapeHtml(followup.followup_time)}</small>`
+                            : "";
+                        const notes = followup.notes
+                            ? escapeHtml(truncateWords(followup.notes, 10))
+                            : "&mdash;";
+                        const assignedTo = followup.assigned_to
+                            ? escapeHtml(followup.assigned_to)
+                            : '<span class="text-muted">&mdash;</span>';
+                        const statusActions = followup.status === "pending"
+                            ? `
+                                <a href="/followups/complete/${followup.id}/" class="action-circle" title="Complete">
+                                    <i class="feather-check"></i>
+                                </a>
+                                <a href="/followups/cancel/${followup.id}/" class="action-circle" title="Cancel">
+                                    <i class="feather-x"></i>
+                                </a>
+                            `
+                            : `
+                                <a href="/followups/undo/${followup.id}/" class="action-circle" title="Undo" onclick="return confirm('Reset this follow-up to pending?')">
+                                    <i class="feather-rotate-ccw"></i>
+                                </a>
+                            `;
+
+                        followupTableBody.innerHTML += `
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width:32px;height:32px;border-radius:50%;background:#4f46e5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">
+                                            ${initial}
+                                        </div>
+                                        <span class="fw-semibold">
+                                            <a href="/leads/${followup.lead_id}/">${leadName}</a>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>${escapeHtml(followup.lead_mobile)}</div>
+                                    ${contactEmail}
+                                </td>
+                                <td>${courseHtml}</td>
+                                <td>
+                                    <span class="status-badge ${statusClass}">
+                                        ${escapeHtml(followup.status_display)}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>${escapeHtml(followup.followup_date)}</div>
+                                    ${timeHtml}
+                                </td>
+                                <td>${escapeHtml(followup.title)}</td>
+                                <td><small>${notes}</small></td>
+                                <td>${assignedTo}</td>
+                                <td class="text-end">
+                                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;white-space:nowrap;">
+                                        <a href="/leads/${followup.lead_id}/" class="action-circle">
+                                            <i class="feather-eye"></i>
+                                        </a>
+                                        ${statusActions}
+                                    </div>
+                                </td>
+                            </tr>`;
+                    });
+                })
+                .catch(error => console.error("Follow-up search error:", error));
+        }, 300);
+    });
+}
+</script>
+
+<style>
+.action-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-circle:hover {
+    background: #f8fafc;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-completed {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-cancelled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Session History</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Session History</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#sessionFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+                <a href="{% url 'session_update' %}" class="btn btn-primary" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-plus" style="font-size:16px;"></i>
+                    <span>CREATE</span>
+                </a>
+                
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <div class="card-body p-0">
+
+                    <!-- SEARCH SECTION -->
+                    <div class="d-flex align-items-center justify-content-between px-3 py-3">
+                        <form method="GET" class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold">Search:</label>
+                            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search sessions..." style="width:250px;height:38px;">
+                            <button type="submit" class="btn btn-light-brand" style="height:38px;">
+                                <i class="feather-search"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- FILTER PANEL -->
+                    <div class="collapse border-top px-3 py-3" id="sessionFilterPanel">
+                        <form method="GET" action="">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Course</label>
+                                    <select name="course" id="sessionCourseFilter" class="form-control">
+                                        <option value="">All Courses</option>
+                                        {% for course in courses %}
+                                        <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ course.course_name }}{% if course.department %} ({{ course.department.department_name }}){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label class="form-label">Batch</label>
+                                    <select name="batch" id="sessionBatchFilter" class="form-control">
+                                        <option value="">All Batches</option>
+                                        {% for batch in batches %}
+                                        <option value="{{ batch.id }}" data-course="{{ batch.course_id|default:'' }}" {% if request.GET.batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ batch.batch_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Trainer</label>
+                                    <select name="trainer" class="form-control" {% if is_trainer_user %}disabled{% endif %}>
+                                        <option value="">All Trainers</option>
+                                        {% for trainer in trainers %}
+                                        <option value="{{ trainer.id }}" {% if selected_trainer_id == trainer.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ trainer.user.get_full_name|default:trainer.user.username }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                
+
+                                <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                                    <button class="btn btn-dark" type="submit">
+                                        Apply Filter
+                                    </button>
+                                    <a href="{% url 'session_update_list' %}" class="btn btn-outline-secondary">
+                                        Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TABLE SECTION -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Batch</th>
+                                    <th>Course</th>
+                                    <th>Students</th>
+                                    <th>Assignment</th>
+                                    <th>Remarks</th>
+                                    <th>Updated By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions %}
+                                <tr>
+                                    <td>{{ session.session_date|date:"d M Y" }}</td>
+                                    <td class="fw-semibold">{{ session.batch.batch_name }}</td>
+                                    <td>{{ session.batch.course.course_name }}</td>
+                                    <td>
+                                        {% if session.has_attendance_records %}
+                                            <a href="{% url 'view_attendance' %}?batch={{ session.batch.id }}&date={{ session.session_date|date:'Y-m-d' }}&session_view=1" class="btn btn-sm btn-light-brand">
+                                                View Students
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ session.assignment_given|default:"-" }}</td>
+                                    <td>{{ session.remarks|default:"-"|truncatewords:10 }}</td>
+                                    <td>{{ session.updated_by.user.username }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'edit_session_update' session.id %}" class="btn btn-sm btn-light-brand" title="Edit">
+                                                <i class="feather-edit-2"></i>
+                                            </a>
+                                            {% if request.user.userprofile.role == 'admin' %}
+                                            <button type="button" class="btn btn-sm btn-light-danger"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                                    data-session-id="{{ session.id }}"
+                                                    data-session-label="{{ session.batch.batch_name }} - {{ session.session_date|date:'d M Y' }}"
+                                                    title="Delete">
+                                                <i class="feather-trash-2"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        No session updates found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Session Update</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the session update for <strong id="deleteSessionLabel"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const courseSelect = document.getElementById("sessionCourseFilter");
+    const batchSelect = document.getElementById("sessionBatchFilter");
+
+    if (!courseSelect || !batchSelect) {
+        return;
+    }
+
+    const batchOptions = Array.from(batchSelect.options).slice(1).map((option) => option.cloneNode(true));
+
+    function filterBatchesByCourse(courseId) {
+        const previousValue = batchSelect.value;
+
+        while (batchSelect.options.length > 1) {
+            batchSelect.remove(1);
+        }
+
+        batchOptions.forEach((option) => {
+            if (!courseId || option.dataset.course === courseId) {
+                batchSelect.add(option.cloneNode(true));
+            }
+        });
+
+        batchSelect.value = previousValue;
+        if (batchSelect.value !== previousValue) {
+            batchSelect.selectedIndex = 0;
+        }
+    }
+
+    courseSelect.addEventListener("change", function () {
+        filterBatchesByCourse(this.value);
+    });
+
+    filterBatchesByCourse(courseSelect.value);
+
+    // Delete modal
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            document.getElementById('deleteSessionLabel').textContent = btn.dataset.sessionLabel;
+            document.getElementById('deleteForm').action = '/session-updates/' + btn.dataset.sessionId + '/delete/';
+        });
+    }
+});
+</script>
+
+{% endblock %}

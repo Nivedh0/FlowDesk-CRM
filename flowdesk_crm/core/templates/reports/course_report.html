@@ -1,0 +1,591 @@
+{% extends 'base.html' %}
+{% block title %}Course Report{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Course Report</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Course Report</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex gap-2">
+            <a href="{% url 'course_report_export' %}" id="exportCourseReportBtn" class="btn btn-success">
+                <i class="feather-download me-1"></i>Download Excel
+            </a>
+        </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-1">Course Report</h5>
+            <p class="text-muted mb-0">Course-wise metrics for enquiries, students and batches.</p>
+        </div>
+        
+    </div>
+
+    <div class="row">
+        <!-- [Mini Cards] start -->
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Total Courses</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ total_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-success">
+                            <i class="feather-arrow-up-circle fs-12"></i>
+                            <span>+20.36%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Departments</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ departments.count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-info">
+                            <i class="feather-layers fs-12"></i>
+                            <span>Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Total Batches</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ total_batches|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-primary">
+                            <i class="feather-grid fs-12"></i>
+                            <span>All Time</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [Mini Cards] end -->
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-xxl-6">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Department-wise Course Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="department-course-chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-6">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Course Duration Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="duration-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [Filter Panel] start -->
+    <div class="collapse" id="courseFilterPanel">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Course name">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">All</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Duration Min</label>
+                        <input type="number" min="0" name="duration_from" value="{{ request.GET.duration_from }}" class="form-control" placeholder="Months">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Duration Max</label>
+                        <input type="number" min="0" name="duration_to" value="{{ request.GET.duration_to }}" class="form-control" placeholder="Months">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Fee From</label>
+                        <input type="number" min="0" step="0.01" name="fee_from" value="{{ request.GET.fee_from }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Fee To</label>
+                        <input type="number" min="0" step="0.01" name="fee_to" value="{{ request.GET.fee_to }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Per Page</label>
+                        <select name="per_page" class="form-select">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12 d-flex justify-content-end gap-2">
+                        <button class="btn btn-primary" type="submit">Apply Filter</button>
+                        <a href="{% url 'course_report' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- [Filter Panel] end -->
+
+    <div class="card stretch stretch-full">
+        <div class="card-header">
+            <h5 class="card-title">Course Details</h5>
+            <div class="card-header-action">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#courseFilterPanel">
+                        <i class="feather-filter me-1"></i>Filter
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="new bootstrap.Modal(document.getElementById('columnSettingsModal')).show()">
+                        <i class="feather-settings"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="courseReportTable">
+                    <thead>
+                        <tr>
+                            <th data-col="department">Department</th>
+                            <th data-col="course">Course</th>
+                            <th data-col="fees">Fees</th>
+                            <th data-col="duration">Duration</th>
+                            <th data-col="enquiries">Enquiries</th>
+                            <th data-col="students">Students</th>
+                            <th data-col="total_batches">Total Batches</th>
+                            <th data-col="active_batches">Active Batches</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td data-col="department">{{ course.department.department_name }}</td>
+                            <td data-col="course">{{ course.course_name }}</td>
+                            <td data-col="fees">{{ course.fees|default:"-" }}</td>
+                            <td data-col="duration">{{ course.duration_months }} months</td>
+                            <td data-col="enquiries">{{ course.total_enquiries }}</td>
+                            <td data-col="students">{{ course.total_students }}</td>
+                            <td data-col="total_batches">{{ course.total_batches }}</td>
+                            <td data-col="active_batches">{{ course.active_batches }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">No courses found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="pagination-row">
+
+        <!-- PAGINATOR -->
+        <nav class="pagination-glass">
+            <ul class="pagination pagination-modern mb-0">
+
+                <!-- PREVIOUS -->
+               {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                    href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                        &lsaquo; Previous
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&lsaquo; Previous</span>
+                </li>
+                {% endif %}
+
+                <!-- PAGE NUMBERS -->
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link"
+                        href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+               <!-- NEXT -->
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                    href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                        Next &rsaquo;
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next &rsaquo;</span>
+                </li>
+                {% endif %}
+
+            </ul>
+        </nav>
+
+        <!-- INFO TEXT -->
+        <div class="pagination-info">
+            Showing
+            <strong>{{ page_obj.start_index }}</strong>
+            -
+            <strong>{{ page_obj.end_index }}</strong>
+            of
+            <strong>{{ paginator.count }}</strong>
+            courses
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.textContent);
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                counter.textContent = target;
+                clearInterval(timer);
+            } else {
+                counter.textContent = Math.floor(current);
+            }
+        }, 20);
+    });
+
+    // Department-wise Course Distribution Chart
+    const deptData = [
+        {% for item in department_distribution %}
+        { name: '{{ item.department__department_name|default:"Unknown" }}', value: {{ item.count }} }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    console.log('Department Data:', deptData);
+
+    if (deptData.length > 0 && typeof ApexCharts !== 'undefined') {
+        const deptChart = new ApexCharts(document.querySelector("#department-course-chart"), {
+            series: deptData.map(item => item.value),
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            labels: deptData.map(item => item.name),
+            colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+            legend: {
+                position: 'bottom'
+            },
+            dataLabels: {
+                enabled: true
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%'
+                    }
+                }
+            }
+        });
+        deptChart.render();
+    }
+
+    // Course Duration Distribution Chart
+    const durationData = [
+        {% for item in duration_distribution %}
+        { duration: '{{ item.duration_months }} months', count: {{ item.count }} }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    console.log('Duration Data:', durationData);
+
+    if (durationData.length > 0 && typeof ApexCharts !== 'undefined') {
+        const durationChart = new ApexCharts(document.querySelector("#duration-chart"), {
+            series: [{
+                name: 'Courses',
+                data: durationData.map(item => item.count)
+            }],
+            chart: {
+                type: 'bar',
+                height: 300
+            },
+            plotOptions: {
+                bar: {
+                    borderRadius: 4,
+                    horizontal: false,
+                    columnWidth: '55%',
+                }
+            },
+            dataLabels: {
+                enabled: true
+            },
+            xaxis: {
+                categories: durationData.map(item => item.duration),
+                title: {
+                    text: 'Duration'
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Number of Courses'
+                }
+            },
+            colors: ['#3b82f6']
+        });
+        durationChart.render();
+    }
+});
+</script>
+
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;">
+            <div class="modal-header">
+                <h5 class="modal-title">Table Columns</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-semibold mb-0">Visible Columns</h6>
+                    <label class="d-flex align-items-center gap-2 text-primary fw-semibold">
+                        <input type="checkbox" id="selectAllColumns">
+                        Select All
+                    </label>
+                </div>
+                <hr class="my-2">
+
+                <div class="row g-3">
+                    <div class="col-md-6 column-group">
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="department" checked><span>Department</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="course" checked><span>Course</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="fees" checked><span>Fees</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="duration" checked><span>Duration</span></label>
+                    </div>
+                    <div class="col-md-6 column-group">
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="enquiries" checked><span>Enquiries</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="students" checked><span>Students</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="total_batches" checked><span>Total Batches</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="active_batches" checked><span>Active Batches</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" onclick="cancelColumnSettings()">Cancel</button>
+                <button class="btn btn-primary" type="button" onclick="applyColumnSettings()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const table = document.getElementById("courseReportTable");
+    const modalEl = document.getElementById("columnSettingsModal");
+    const toggles = Array.from(document.querySelectorAll(".column-toggle"));
+    const selectAllCheckbox = document.getElementById("selectAllColumns");
+    let savedColumnState = {};
+    if (!table || !modalEl || !toggles.length || !selectAllCheckbox) return;
+
+    function getCurrentState() {
+        const state = {};
+        toggles.forEach((toggle) => { state[toggle.dataset.col] = toggle.checked; });
+        return state;
+    }
+
+    function setState(state) {
+        toggles.forEach((toggle) => {
+            if (Object.prototype.hasOwnProperty.call(state, toggle.dataset.col)) {
+                toggle.checked = state[toggle.dataset.col];
+            }
+        });
+    }
+
+    function applyColumnVisibility() {
+        toggles.forEach((toggle) => {
+            const col = toggle.dataset.col;
+            const visible = toggle.checked;
+            table.querySelectorAll(`th[data-col="${col}"], td[data-col="${col}"]`).forEach((el) => {
+                el.style.display = visible ? "" : "none";
+            });
+        });
+    }
+
+    function syncSelectAll() {
+        const allChecked = toggles.every((toggle) => toggle.checked);
+        const noneChecked = toggles.every((toggle) => !toggle.checked);
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = !allChecked && !noneChecked;
+    }
+
+    selectAllCheckbox.addEventListener("change", function () {
+        toggles.forEach((toggle) => { toggle.checked = this.checked; });
+        syncSelectAll();
+    });
+    toggles.forEach((toggle) => toggle.addEventListener("change", syncSelectAll));
+
+    window.applyColumnSettings = function () {
+        savedColumnState = getCurrentState();
+        applyColumnVisibility();
+        bootstrap.Modal.getInstance(modalEl).hide();
+    };
+    window.cancelColumnSettings = function () {
+        setState(savedColumnState);
+        syncSelectAll();
+        bootstrap.Modal.getInstance(modalEl).hide();
+    };
+
+    savedColumnState = getCurrentState();
+    syncSelectAll();
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const exportBtn = document.getElementById("exportCourseReportBtn");
+    const table = document.getElementById("courseReportTable");
+    if (!exportBtn) return;
+
+    exportBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        const params = new URLSearchParams(window.location.search);
+        params.delete("columns");
+        const visibleColumns = table
+            ? Array.from(table.querySelectorAll("th[data-col]"))
+                .filter((th) => th.style.display !== "none")
+                .map((th) => th.dataset.col)
+            : [];
+        visibleColumns.forEach((col) => params.append("columns", col));
+        const query = params.toString();
+        window.location.href = query ? `${this.href}?${query}` : this.href;
+    });
+});
+</script>
+
+<style>
+/* ================= GLASS CONTAINER ================= */
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+/* ================= PAGINATION LIST ================= */
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ================= PAGE BUTTONS ================= */
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+/* ================= ONE LINE PAGINATION ================= */
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.column-group { display: flex; flex-direction: column; gap: 10px; }
+.column-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; }
+.column-item:hover { background: #f1f5f9; }
+.column-item input { transform: scale(1.1); }
+.column-item span { font-weight: 500; color: #334155; }
+#selectAllColumns { transform: scale(1.15); }
+
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+</style>
+{% endblock %}

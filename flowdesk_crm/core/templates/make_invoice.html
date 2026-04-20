@@ -1,0 +1,1045 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Invoice{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Make Invoice</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'payments' %}">Payments</a></li>
+            <li class="breadcrumb-item">Make Invoice</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="{% url 'add_payment_for_fee' fee.id %}" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Add Payment</span>
+                </a>
+                <button type="button" id="printInvoiceBtn" class="btn btn-dark">
+                    <i class="feather-printer me-2"></i>
+                    <span>Print Final Invoice</span>
+                </button>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --inv-bg: #f4f6fb;
+        --inv-card: #ffffff;
+        --inv-text: #14233b;
+        --inv-muted: #64748b;
+        --inv-line: #dce3ef;
+        --inv-accent: #1f4ed8;
+        --inv-accent-soft: #e8efff;
+        --inv-success: #12805c;
+        --inv-danger: #be123c;
+    }
+
+    .invoice-workspace {
+        max-width: 1160px;
+        margin: 0 auto;
+    }
+
+    .invoice-shell {
+        border: 1px solid var(--inv-line);
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--inv-card);
+        box-shadow: 0 18px 45px rgba(20, 35, 59, 0.08);
+    }
+
+    .invoice-hero {
+        background: linear-gradient(130deg, #2f62d3 0%, #5b8df0 100%);
+        color: #fff;
+        padding: 26px 28px;
+    }
+
+    .invoice-hero h4 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .invoice-hero .meta {
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.85rem;
+    }
+
+    .invoice-body {
+        padding: 28px;
+        background: var(--inv-bg);
+    }
+
+    .soft-card {
+        background: var(--inv-card);
+        border: 1px solid var(--inv-line);
+        border-radius: 14px;
+        padding: 18px;
+    }
+
+    .soft-card h6 {
+        color: var(--inv-text);
+        margin-bottom: 12px;
+        font-weight: 700;
+    }
+
+    .invoice-meta input,
+    .invoice-meta textarea,
+    .invoice-meta select {
+        font-size: 0.9rem;
+        border-color: #cfd9ea;
+    }
+
+    .invoice-meta .form-control:focus {
+        border-color: #96b2f5;
+        box-shadow: 0 0 0 0.15rem rgba(31, 78, 216, 0.12);
+    }
+
+    .invoice-table-wrap {
+        background: var(--inv-card);
+        border: 1px solid var(--inv-line);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .invoice-table {
+        margin-bottom: 0;
+    }
+
+    .invoice-table thead th {
+        background: #f8fafc;
+        color: #334155;
+        border-color: var(--inv-line);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+    }
+
+    .invoice-table td,
+    .invoice-table th {
+        vertical-align: middle;
+        border-color: var(--inv-line);
+    }
+
+    .invoice-table input {
+        min-width: 90px;
+    }
+
+    .invoice-table .form-control {
+        border-color: #d6deea;
+        background: #fff;
+        box-shadow: none;
+    }
+
+    .invoice-table .form-control:focus {
+        border-color: #a6b9db;
+        box-shadow: 0 0 0 0.1rem rgba(100, 116, 139, 0.08);
+    }
+
+    .invoice-table .form-control[readonly] {
+        background: #f8fafc;
+    }
+
+    .invoice-table .remove-item {
+        color: #475569;
+        border-color: #cbd5e1;
+        background: #fff;
+    }
+
+    .invoice-table .remove-item:hover,
+    .invoice-table .remove-item:focus {
+        color: #334155;
+        border-color: #94a3b8;
+        background: #f8fafc;
+        box-shadow: none;
+    }
+
+    .invoice-table .item-name {
+        min-width: 230px;
+    }
+
+    .summary-card {
+        border-radius: 14px;
+        border: 1px solid var(--inv-line);
+    }
+
+    .summary-card .row-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px dashed var(--inv-line);
+    }
+
+    .summary-card .row-line:last-child {
+        border-bottom: 0;
+    }
+
+    .summary-card .grand {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--inv-text);
+    }
+
+    .summary-card .row-line.emphasis {
+        margin-top: 10px;
+        border-bottom: 0;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+
+    .summary-card .row-line.paid-row {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+    }
+
+    .summary-card .row-line.pending-row {
+        background: #fff1f2;
+        border-color: #fecdd3;
+        color: #9f1239;
+    }
+
+    .mini-stat {
+        background: var(--inv-card);
+        border: 1px solid var(--inv-line);
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .mini-stat small {
+        color: var(--inv-muted);
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .mini-stat h6 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .mini-stat.total-fee {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+    }
+
+    .mini-stat.invoice-total {
+        background: #fffbeb;
+        border-color: #fde68a;
+    }
+
+    .mini-stat.paid {
+        background: #ecfdf5;
+        border-color: #86efac;
+    }
+
+    .mini-stat.pending {
+        background: #fff1f2;
+        border-color: #fda4af;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .status-pill.pending,
+    .status-pill.partial {
+        background: #fff6db;
+        color: #a16207;
+    }
+
+    .status-pill.paid {
+        background: #e6f8f1;
+        color: #117b59;
+    }
+
+    .status-pill.overdue {
+        background: #ffe8ee;
+        color: #be123c;
+    }
+
+    .print-invoice {
+        display: none;
+        background: #fff;
+        color: #111827;
+        font-size: 13px;
+    }
+
+    .print-head {
+        border-bottom: 2px solid #d1d5db;
+        padding-bottom: 16px;
+        margin-bottom: 18px;
+    }
+
+    .print-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+    }
+
+    .print-table th,
+    .print-table td {
+        border: 1px solid #d1d5db;
+        padding: 8px;
+    }
+
+    .print-table th {
+        background: #f3f4f6;
+        text-align: left;
+        font-weight: 700;
+    }
+
+    .print-right {
+        text-align: right;
+    }
+
+    .print-signature {
+        margin-top: 16px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .print-signature-box {
+        min-width: 240px;
+        text-align: center;
+        color: #374151;
+    }
+
+    .print-sign-line {
+        border-top: 1px solid #6b7280;
+        margin-top: 32px;
+        padding-top: 6px;
+    }
+
+    .print-paid-row th,
+    .print-paid-row td {
+        background: #ecfdf5;
+        color: #065f46;
+        font-weight: 700;
+    }
+
+    .print-pending-row th,
+    .print-pending-row td {
+        background: #fff1f2;
+        color: #9f1239;
+        font-weight: 700;
+    }
+
+    .payment-history-table thead th {
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 600;
+        border-color: var(--inv-line);
+    }
+
+    .payment-history-table td {
+        border-color: var(--inv-line);
+        vertical-align: middle;
+    }
+
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+    @media print {
+        .nxl-navigation,
+        .nxl-header,
+        .no-print,
+        .main-content > :not(.print-invoice),
+        .page-header,
+        .btn,
+        .alert {
+            display: none !important;
+        }
+
+        .nxl-container,
+        .nxl-content,
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #fff !important;
+        }
+
+        .print-invoice {
+            display: block !important;
+        }
+    }
+</style>
+
+<div class="main-content">
+
+
+    <div class="invoice-workspace no-print">
+        <div class="invoice-shell">
+            <div class="invoice-hero d-flex justify-content-between align-items-start">
+                <div>
+                    <h4 id="heroLabel">{{ invoice_label }}</h4>
+                    <div class="meta mt-1">Invoice No: <span id="heroNumber">{{ invoice_number }}</span></div>
+                    <div class="meta">Generated on {{ issue_date|date:"d M Y" }}</div>
+                </div>
+                <div class="text-end">
+                    <img src="{% static 'assets/images/flow-logo-full.png' %}" alt="FlowDesk" style="height:38px; width:auto; filter: brightness(0) invert(1);">
+                    <div class="mt-2">
+                        <span id="feeStatusBadge" class="status-pill {{ fee.fee_status }}">{{ fee.fee_status }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="invoice-body invoice-meta">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label mb-1">Invoice Label</label>
+                        <input type="text" id="invoiceLabel" class="form-control" value="{{ invoice_label }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label mb-1">Invoice Number</label>
+                        <input type="text" id="invoiceNumber" class="form-control" value="{{ invoice_number }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label mb-1">Invoice Product</label>
+                        <input type="text" id="invoiceProduct" class="form-control" value="{{ invoice_product }}">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="soft-card h-100">
+                            <h6>Invoice From</h6>
+                            <label class="form-label mb-1">Name</label>
+                            <input type="text" id="fromName" class="form-control mb-2" value="{{ from_name }}">
+                            <label class="form-label mb-1">Email</label>
+                            <input type="email" id="fromEmail" class="form-control mb-2" value="{{ from_email }}">
+                            <label class="form-label mb-1">Phone</label>
+                            <input type="text" id="fromPhone" class="form-control mb-2" value="{{ from_phone }}">
+                            <label class="form-label mb-1">Address</label>
+                            <textarea id="fromAddress" rows="3" class="form-control">{{ from_address }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="soft-card h-100">
+                            <h6>Invoice To</h6>
+                            <label class="form-label mb-1">Student Name</label>
+                            <input type="text" id="toName" class="form-control mb-2" value="{{ to_name }}">
+                            <label class="form-label mb-1">Email</label>
+                            <input type="email" id="toEmail" class="form-control mb-2" value="{{ to_email }}">
+                            <label class="form-label mb-1">Phone</label>
+                            <input type="text" id="toPhone" class="form-control mb-2" value="{{ to_phone }}">
+                            <label class="form-label mb-1">Address</label>
+                            <textarea id="toAddress" rows="3" class="form-control">{{ to_address }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label mb-1">Issue Date</label>
+                        <input type="date" id="issueDate" class="form-control" value="{{ issue_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1">Due Date</label>
+                        <input type="date" id="dueDate" class="form-control" value="{{ fee.due_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1">Fee Status</label>
+                        <input type="text" id="feeStatus" class="form-control text-uppercase" value="{{ fee.fee_status }}" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1">Course</label>
+                        <input type="text" id="courseName" class="form-control" value="{{ fee.student.course.course_name|default:'-' }}" readonly>
+                    </div>
+                </div>
+
+                <div class="invoice-table-wrap mb-3">
+                    <div class="table-responsive">
+                        <table class="table invoice-table" id="invoiceItemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">#</th>
+                                    <th>Item</th>
+                                    <th style="width: 120px;">Qty</th>
+                                    <th style="width: 170px;">Price</th>
+                                    <th style="width: 170px;">Total</th>
+                                    <th style="width: 90px;" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoiceItemsBody">
+                                {% for item in invoice_items %}
+                                    <tr>
+                                        <td class="row-index">{{ forloop.counter }}</td>
+                                        <td>
+                                            <input type="text" class="form-control item-name" value="{{ item.title }}">
+                                            <small class="text-muted d-block mt-1 item-note">{{ item.description }}</small>
+                                        </td>
+                                        <td><input type="number" class="form-control item-qty" min="0" step="0.01" value="{{ item.qty|floatformat:2 }}"></td>
+                                        <td><input type="number" class="form-control item-price" min="0" step="0.01" value="{{ item.price|floatformat:2 }}"></td>
+                                        <td><input type="number" class="form-control item-total" value="0.00" readonly></td>
+                                        <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-item">X</button></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" id="addItemBtn" class="btn btn-sm btn-primary">Add Item</button>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-6">
+                        <div class="soft-card h-100">
+                            <h6>Invoice Note</h6>
+                            <textarea id="invoiceNote" class="form-control" rows="7">{{ invoice_note }}</textarea>
+                            <div class="mt-3">
+                                <label class="form-label mb-1">Signature Name</label>
+                                <input type="text" id="signatureName" class="form-control mb-2" value="Authorized Signatory">
+                                <label class="form-label mb-1">Signature Role</label>
+                                <input type="text" id="signatureRole" class="form-control" value="Accounts Department">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="summary-card soft-card">
+                            <h6 class="mb-3">Totals</h6>
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Tax %</label>
+                                <input type="number" id="taxPercent" class="form-control" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Discount</label>
+                                <input type="number" id="discountAmount" class="form-control" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="row-line">
+                                <span>Subtotal</span>
+                                <strong id="subTotalText">0.00</strong>
+                            </div>
+                            <div class="row-line">
+                                <span>Tax Amount</span>
+                                <strong id="taxAmountText">0.00</strong>
+                            </div>
+                            <div class="row-line grand">
+                                <span>Grand Total</span>
+                                <span id="grandTotalText">0.00</span>
+                            </div>
+                            <div class="row-line emphasis paid-row">
+                                <span>Amount Paid</span>
+                                <strong id="currentPaidText">{{ current_paid_amount|floatformat:2 }}</strong>
+                            </div>
+                            <div class="row-line emphasis pending-row">
+                                <span>Amount Pending</span>
+                                <strong id="pendingAmountText">{{ pending_amount|floatformat:2 }}</strong>
+                            </div>
+                            <input type="hidden" id="subTotal" value="0.00">
+                            <input type="hidden" id="taxAmount" value="0.00">
+                            <input type="hidden" id="grandTotal" value="0.00">
+                            <input type="hidden" id="courseGrandTotal" value="{{ fee.total_fee|floatformat:2 }}">
+                            <input type="hidden" id="currentPaidAmount" value="{{ current_paid_amount|floatformat:2 }}">
+                            <input type="hidden" id="pendingAmount" value="{{ pending_amount|floatformat:2 }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="mini-stat total-fee">
+                            <small>Total Fee</small>
+                            <h6>{{ fee.total_fee|floatformat:2 }}</h6>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mini-stat invoice-total">
+                            <small>Invoice Total</small>
+                            <h6 id="invoiceTotalCardText">0.00</h6>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mini-stat paid">
+                            <small>Amount Paid</small>
+                            <h6 id="paidAmountCardText">{{ current_paid_amount|floatformat:2 }}</h6>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mini-stat pending">
+                            <small>Amount Pending</small>
+                            <h6 id="pendingAmountCardText">{{ pending_amount|floatformat:2 }}</h6>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="soft-card mt-3">
+                    <h6 class="mb-3">Previous Payments</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm payment-history-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">#</th>
+                                    <th style="width: 160px;">Date</th>
+                                    <th style="width: 180px;">Mode</th>
+                                    <th style="width: 160px;" class="text-end">Amount</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_history %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                                        <td>{{ payment.get_payment_mode_display }}</td>
+                                        <td class="text-end">{{ payment.amount_paid|floatformat:2 }}</td>
+                                        <td>{{ payment.remarks|default:"-" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">No previous payments found.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if fee.installments.exists %}
+                <div class="soft-card mt-3">
+                    <h6 class="mb-3">Installment Schedule</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Paid</th>
+                                    <th>Pending</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inst in fee.installments.all %}
+                                <tr>
+                                    <td>{{ inst.installment_number }}</td>
+                                    <td>₹{{ inst.amount }}</td>
+                                    <td>{{ inst.due_date|date:"d M Y" }}</td>
+                                    <td>₹{{ inst.paid_amount }}</td>
+                                    <td>₹{{ inst.pending_amount }}</td>
+                                    <td>
+                                        {% if inst.status == 'paid' %}
+                                            <span class="badge bg-success">Paid</span>
+                                        {% elif inst.status == 'partial' %}
+                                            <span class="badge bg-primary">Partial</span>
+                                        {% elif inst.status == 'overdue' %}
+                                            <span class="badge bg-danger">Overdue</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <section class="print-invoice" id="printInvoice">
+        <div class="print-head d-flex justify-content-between align-items-start">
+            <div>
+                <p class="print-title" id="p_invoiceLabel"></p>
+                <div><strong>Invoice No:</strong> <span id="p_invoiceNumber"></span></div>
+                <div><strong>Issue Date:</strong> <span id="p_issueDate"></span></div>
+                <div><strong>Due Date:</strong> <span id="p_dueDate"></span></div>
+            </div>
+            <div class="text-end">
+                <img src="{% static 'assets/images/flow-logo-full.png' %}" alt="FlowDesk" style="height:34px; width:auto;">
+                <div style="margin-top:8px;"><strong>Status:</strong> <span id="p_feeStatus"></span></div>
+                <div><strong>Course:</strong> <span id="p_courseName"></span></div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-bottom: 12px;">
+            <div class="col-6">
+                <h6 style="margin: 0 0 6px;">From</h6>
+                <div id="p_fromName"></div>
+                <div id="p_fromEmail"></div>
+                <div id="p_fromPhone"></div>
+                <div id="p_fromAddress" style="white-space: pre-line;"></div>
+            </div>
+            <div class="col-6">
+                <h6 style="margin: 0 0 6px;">Bill To</h6>
+                <div id="p_toName"></div>
+                <div id="p_toEmail"></div>
+                <div id="p_toPhone"></div>
+                <div id="p_toAddress" style="white-space: pre-line;"></div>
+            </div>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Item</th>
+                    <th style="width: 90px;">Qty</th>
+                    <th style="width: 120px;">Price</th>
+                    <th style="width: 120px;">Total</th>
+                </tr>
+            </thead>
+            <tbody id="p_itemsBody"></tbody>
+        </table>
+
+        <div style="margin-top: 12px;">
+            <h6 style="margin: 0 0 6px;">Previous Payments</h6>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 140px;">Date</th>
+                        <th style="width: 140px;">Mode</th>
+                        <th style="width: 130px;">Amount</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payment_history %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                            <td>{{ payment.get_payment_mode_display }}</td>
+                            <td class="print-right">{{ payment.amount_paid|floatformat:2 }}</td>
+                            <td>{{ payment.remarks|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="print-right">No previous payments found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <table class="print-table" style="margin-top: 10px; width: 360px; margin-left: auto;">
+                <tbody>
+                    <tr>
+                        <th>Subtotal</th>
+                        <td class="print-right" id="p_subtotal"></td>
+                    </tr>
+                    <tr>
+                        <th>Tax</th>
+                        <td class="print-right" id="p_tax"></td>
+                    </tr>
+                    <tr>
+                        <th>Tax Amount</th>
+                        <td class="print-right" id="p_taxAmount"></td>
+                    </tr>
+                    <tr>
+                        <th>Discount</th>
+                        <td class="print-right" id="p_discount"></td>
+                    </tr>
+                    <tr>
+                        <th>Grand Total</th>
+                        <td class="print-right"><strong id="p_grandTotal"></strong></td>
+                    </tr>
+                    <tr class="print-paid-row">
+                        <th>Current Paid Amount</th>
+                        <td class="print-right"><strong id="p_currentPaidAmount"></strong></td>
+                    </tr>
+                    <tr class="print-pending-row">
+                        <th><strong>Pending Amount</strong></th>
+                        <td class="print-right"><strong id="p_pendingAmount"></strong></td>
+                    </tr>
+                </tbody>
+        </table>
+
+        <div style="margin-top: 14px; border-top: 1px dashed #d1d5db; padding-top: 10px;">
+            <h6 style="margin: 0 0 6px;">Note</h6>
+            <div id="p_note" style="white-space: pre-line;"></div>
+        </div>
+
+        <div class="print-signature">
+            <div class="print-signature-box">
+                <div id="p_signatureRole"></div>
+                <div class="print-sign-line">
+                    <strong id="p_signatureName"></strong>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+(function () {
+    const itemsBody = document.getElementById('invoiceItemsBody');
+    const subTotalEl = document.getElementById('subTotal');
+    const taxPercentEl = document.getElementById('taxPercent');
+    const taxAmountEl = document.getElementById('taxAmount');
+    const discountAmountEl = document.getElementById('discountAmount');
+    const grandTotalEl = document.getElementById('grandTotal');
+    const courseGrandTotalEl = document.getElementById('courseGrandTotal');
+    const currentPaidAmountEl = document.getElementById('currentPaidAmount');
+    const pendingAmountEl = document.getElementById('pendingAmount');
+
+    const subTotalText = document.getElementById('subTotalText');
+    const taxAmountText = document.getElementById('taxAmountText');
+    const grandTotalText = document.getElementById('grandTotalText');
+    const currentPaidText = document.getElementById('currentPaidText');
+    const pendingAmountText = document.getElementById('pendingAmountText');
+    const invoiceTotalCardText = document.getElementById('invoiceTotalCardText');
+    const paidAmountCardText = document.getElementById('paidAmountCardText');
+    const pendingAmountCardText = document.getElementById('pendingAmountCardText');
+
+    const addItemBtn = document.getElementById('addItemBtn');
+    const printBtn = document.getElementById('printInvoiceBtn');
+
+    const invoiceLabelEl = document.getElementById('invoiceLabel');
+    const invoiceNumberEl = document.getElementById('invoiceNumber');
+    const feeStatusEl = document.getElementById('feeStatus');
+    const feeStatusBadge = document.getElementById('feeStatusBadge');
+
+    function toNumber(value) {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function toMoney(value) {
+        return value.toFixed(2);
+    }
+
+    function moneyPrint(value) {
+        return toNumber(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function text(id) {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+    }
+
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value;
+        }
+    }
+
+    function renumberRows() {
+        itemsBody.querySelectorAll('tr').forEach((row, index) => {
+            const idxCell = row.querySelector('.row-index');
+            if (idxCell) idxCell.textContent = String(index + 1);
+        });
+    }
+
+    function recalculate() {
+        let subtotal = 0;
+
+        itemsBody.querySelectorAll('tr').forEach((row) => {
+            const qtyEl = row.querySelector('.item-qty');
+            const priceEl = row.querySelector('.item-price');
+            const totalEl = row.querySelector('.item-total');
+            const qty = toNumber(qtyEl ? qtyEl.value : 0);
+            const price = toNumber(priceEl ? priceEl.value : 0);
+            const total = qty * price;
+            subtotal += total;
+            if (totalEl) totalEl.value = toMoney(total);
+        });
+
+        const taxPercent = toNumber(taxPercentEl.value);
+        const discount = toNumber(discountAmountEl.value);
+        const taxAmount = subtotal * (taxPercent / 100);
+        const grandTotal = Math.max(0, subtotal + taxAmount - discount);
+
+        subTotalEl.value = toMoney(subtotal);
+        taxAmountEl.value = toMoney(taxAmount);
+        grandTotalEl.value = toMoney(grandTotal);
+
+        subTotalText.textContent = toMoney(subtotal);
+        taxAmountText.textContent = toMoney(taxAmount);
+        grandTotalText.textContent = toMoney(grandTotal);
+
+        if (invoiceTotalCardText) invoiceTotalCardText.textContent = moneyPrint(grandTotal);
+        if (currentPaidText) currentPaidText.textContent = moneyPrint(currentPaidAmountEl ? currentPaidAmountEl.value : 0);
+        if (pendingAmountText) pendingAmountText.textContent = moneyPrint(pendingAmountEl ? pendingAmountEl.value : 0);
+        if (paidAmountCardText) paidAmountCardText.textContent = moneyPrint(currentPaidAmountEl ? currentPaidAmountEl.value : 0);
+        if (pendingAmountCardText) pendingAmountCardText.textContent = moneyPrint(pendingAmountEl ? pendingAmountEl.value : 0);
+    }
+
+    function collectItems() {
+        const rows = [];
+        itemsBody.querySelectorAll('tr').forEach((row, idx) => {
+            const name = row.querySelector('.item-name')?.value?.trim() || '';
+            const note = row.querySelector('.item-note')?.textContent?.trim() || '';
+            const qty = toNumber(row.querySelector('.item-qty')?.value || 0);
+            const price = toNumber(row.querySelector('.item-price')?.value || 0);
+            const total = qty * price;
+            rows.push({ idx: idx + 1, name, note, qty, price, total });
+        });
+        return rows;
+    }
+
+    function syncHero() {
+        const label = invoiceLabelEl.value.trim() || 'Invoice';
+        const number = invoiceNumberEl.value.trim() || '-';
+        document.getElementById('heroLabel').textContent = label;
+        document.getElementById('heroNumber').textContent = number;
+
+        const status = (feeStatusEl.value || '').toLowerCase();
+        feeStatusBadge.textContent = status || '-';
+        feeStatusBadge.className = 'status-pill ' + status;
+    }
+
+    function syncPrintInvoice() {
+        recalculate();
+
+        setText('p_invoiceLabel', text('invoiceLabel'));
+        setText('p_invoiceNumber', text('invoiceNumber'));
+        setText('p_issueDate', text('issueDate'));
+        setText('p_dueDate', text('dueDate'));
+        setText('p_feeStatus', text('feeStatus').toUpperCase());
+        setText('p_courseName', text('courseName'));
+
+        setText('p_fromName', text('fromName'));
+        setText('p_fromEmail', text('fromEmail'));
+        setText('p_fromPhone', text('fromPhone'));
+        setText('p_fromAddress', text('fromAddress'));
+
+        setText('p_toName', text('toName'));
+        setText('p_toEmail', text('toEmail'));
+        setText('p_toPhone', text('toPhone'));
+        setText('p_toAddress', text('toAddress'));
+
+        const pItemsBody = document.getElementById('p_itemsBody');
+        pItemsBody.innerHTML = '';
+
+        collectItems().forEach((item) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.idx}</td>
+                <td>${item.name}${item.note ? `<div style="color:#6b7280;font-size:11px;margin-top:2px;">${item.note}</div>` : ''}</td>
+                <td>${moneyPrint(item.qty)}</td>
+                <td class="print-right">${moneyPrint(item.price)}</td>
+                <td class="print-right">${moneyPrint(item.total)}</td>
+            `;
+            pItemsBody.appendChild(tr);
+        });
+
+        const taxPct = toNumber(taxPercentEl.value);
+        const discount = toNumber(discountAmountEl.value);
+
+        setText('p_subtotal', moneyPrint(subTotalEl.value));
+        setText('p_tax', moneyPrint(taxPct) + '%');
+        setText('p_taxAmount', moneyPrint(taxAmountEl.value));
+        setText('p_discount', moneyPrint(discount));
+        setText('p_grandTotal', moneyPrint(courseGrandTotalEl ? courseGrandTotalEl.value : grandTotalEl.value));
+        setText('p_currentPaidAmount', moneyPrint(currentPaidAmountEl ? currentPaidAmountEl.value : 0));
+        setText('p_pendingAmount', moneyPrint(pendingAmountEl ? pendingAmountEl.value : 0));
+        setText('p_note', text('invoiceNote'));
+        setText('p_signatureName', text('signatureName'));
+        setText('p_signatureRole', text('signatureRole'));
+    }
+
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', () => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="row-index"></td>
+                <td>
+                    <input type="text" class="form-control item-name" value="New Item">
+                    <small class="text-muted d-block mt-1 item-note">Editable line item</small>
+                </td>
+                <td><input type="number" class="form-control item-qty" min="0" step="0.01" value="1.00"></td>
+                <td><input type="number" class="form-control item-price" min="0" step="0.01" value="0.00"></td>
+                <td><input type="number" class="form-control item-total" value="0.00" readonly></td>
+                <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-item">X</button></td>
+            `;
+            itemsBody.appendChild(row);
+            renumberRows();
+            recalculate();
+            syncPrintInvoice();
+        });
+    }
+
+    itemsBody.addEventListener('input', (event) => {
+        if (event.target.matches('.item-qty, .item-price, .item-name')) {
+            recalculate();
+            syncPrintInvoice();
+        }
+    });
+
+    itemsBody.addEventListener('click', (event) => {
+        if (event.target.classList.contains('remove-item')) {
+            const rows = itemsBody.querySelectorAll('tr');
+            if (rows.length > 1) {
+                event.target.closest('tr').remove();
+                renumberRows();
+                recalculate();
+                syncPrintInvoice();
+            }
+        }
+    });
+
+    [taxPercentEl, discountAmountEl, invoiceLabelEl, invoiceNumberEl, feeStatusEl,
+     document.getElementById('issueDate'), document.getElementById('dueDate'),
+     document.getElementById('fromName'), document.getElementById('fromEmail'), document.getElementById('fromPhone'), document.getElementById('fromAddress'),
+     document.getElementById('toName'), document.getElementById('toEmail'), document.getElementById('toPhone'), document.getElementById('toAddress'),
+     document.getElementById('invoiceNote'), document.getElementById('signatureName'), document.getElementById('signatureRole')
+    ].forEach((el) => {
+        if (el) {
+            el.addEventListener('input', () => {
+                syncHero();
+                syncPrintInvoice();
+            });
+        }
+    });
+
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            syncPrintInvoice();
+            window.print();
+        });
+    }
+
+    window.addEventListener('beforeprint', syncPrintInvoice);
+
+    renumberRows();
+    recalculate();
+    syncHero();
+    syncPrintInvoice();
+})();
+</script>
+{% endblock %}

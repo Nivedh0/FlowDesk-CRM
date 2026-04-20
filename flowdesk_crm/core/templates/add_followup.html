@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Add Follow-up</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'followups' %}">Follow Ups</a></li>
+            <li class="breadcrumb-item">Add</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .followup-shell {
+        width: 100%;
+        margin-top: 18px;
+    }
+
+    .followup-panel {
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+    }
+
+    .followup-head {
+        padding: 18px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #fafafa;
+    }
+
+    .followup-eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 6px;
+    }
+
+    .followup-head h2 {
+        margin: 0 0 4px;
+        font-size: 1.35rem;
+        color: #111827;
+    }
+
+    .followup-head p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.92rem;
+    }
+
+    .followup-grid {
+        display: grid;
+        grid-template-columns: minmax(300px, 34%) minmax(0, 66%);
+    }
+
+    .followup-sidebar {
+        padding: 20px;
+        border-right: 1px solid #e5e7eb;
+        background: #fcfcfc;
+    }
+
+    .followup-main {
+        padding: 20px 24px;
+    }
+
+    .section-title {
+        margin-bottom: 14px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .lead-card,
+    .form-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .lead-card {
+        padding: 16px;
+    }
+
+    .lead-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: #111827;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .lead-card h4 {
+        margin: 0 0 2px;
+        font-size: 1rem;
+        color: #111827;
+    }
+
+    .lead-card p {
+        margin: 0 0 14px;
+        font-size: 0.88rem;
+        color: #6b7280;
+    }
+
+    .lead-meta {
+        display: grid;
+        gap: 10px;
+    }
+
+    .lead-meta-item {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #fafafa;
+        border: 1px solid #eceff3;
+    }
+
+    .lead-meta-item span {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+
+    .lead-meta-item strong {
+        color: #111827;
+        font-size: 0.88rem;
+        word-break: break-word;
+    }
+
+    .form-card {
+        padding: 18px;
+    }
+
+    .form-card h3 {
+        margin: 0 0 4px;
+        font-size: 1.05rem;
+        color: #111827;
+    }
+
+    .form-card > p {
+        margin: 0 0 16px;
+        color: #6b7280;
+        font-size: 0.88rem;
+    }
+
+    .followup-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .form-card .form-control {
+        min-height: 42px;
+        border-radius: 10px;
+        border-color: #d1d5db;
+        padding: 0.68rem 0.85rem;
+        box-shadow: none;
+    }
+
+    .form-card textarea.form-control {
+        min-height: 92px;
+        resize: none;
+    }
+
+    .form-card .form-control:focus {
+        border-color: #9ca3af;
+        box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.14);
+    }
+
+    .followup-helper {
+        margin-top: 5px;
+        font-size: 0.78rem;
+        color: #6b7280;
+    }
+
+    .followup-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .followup-actions .btn {
+        min-width: 150px;
+        min-height: 42px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 991.98px) {
+        .followup-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .followup-sidebar {
+            border-right: 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .followup-head,
+        .followup-sidebar,
+        .followup-main {
+            padding: 16px;
+        }
+
+        .followup-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="followup-shell">
+    <div class="followup-panel">
+        <div class="followup-head">
+            <div class="followup-eyebrow">CRM Activity</div>
+            <h2>Add Follow-up</h2>
+            <p>Create the next scheduled touchpoint for this lead.</p>
+        </div>
+
+        <div class="followup-grid">
+            <aside class="followup-sidebar">
+                <div class="section-title">Lead Summary</div>
+                <div class="lead-card">
+                    <div class="lead-avatar">{{ lead.full_name|slice:":1"|upper }}</div>
+                    <h4>{{ lead.full_name }}</h4>
+                    <p>Quick context before scheduling.</p>
+                    <div class="lead-meta">
+                        <div class="lead-meta-item">
+                            <span>Email</span>
+                            <strong>{{ lead.email|default:"Not available" }}</strong>
+                        </div>
+                        <div class="lead-meta-item">
+                            <span>Phone</span>
+                            <strong>{{ lead.mobile|default:"Not available" }}</strong>
+                        </div>
+                        <div class="lead-meta-item">
+                            <span>Course</span>
+                            <strong>{{ lead.course.course_name|default:"Not assigned" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="followup-main">
+                <div class="form-card">
+                    <h3>Follow-up Details</h3>
+                    <p>Enter the essential details only.</p>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label followup-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" name="title" id="title" class="form-control" required placeholder="Demo call, fee reminder, second follow-up">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="followup_date" class="form-label followup-label">Date <span class="text-danger">*</span></label>
+                                    <input type="date" name="followup_date" id="followup_date" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="followup_time" class="form-label followup-label">Time</label>
+                                    <input type="time" name="followup_time" id="followup_time" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="notes" class="form-label followup-label">Notes</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Short reminder or agenda..."></textarea>
+                            <div class="followup-helper">Keep it short and actionable.</div>
+                        </div>
+
+                        <div class="followup-actions">
+                            <button type="submit" class="btn btn-dark">
+                                <i class="feather-plus"></i>
+                                Add Follow-up
+                            </button>
+                            <a href="{% url 'followups' %}" class="btn btn-light border">
+                                <i class="feather-arrow-left"></i>
+                                Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

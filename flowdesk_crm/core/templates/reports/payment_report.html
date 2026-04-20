@@ -1,0 +1,888 @@
+{% extends 'base.html' %}
+{% block title %}Payment Report{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Payment Report</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Payment Report</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="#" id="exportPaymentReportBtn" class="btn btn-success">
+                    <i class="feather-download me-1"></i>Download Excel
+                </a>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content payment-report-page">
+        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-1">
+            <div>
+                <h5 class="mb-1">Payment Overview</h5>
+                <p class="text-muted mb-0">Course-wise fee summary per student (overall).</p>
+            </div>
+        </div>
+
+        <div class="row g-3 payment-metrics-row">
+            <div class="col-xxl-2 col-lg-4 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="fs-12 fw-medium text-muted mb-3">Fee Records</div>
+                        <div class="hstack justify-content-between lh-base">
+                            <h3><span class="counter">{{ total_count }}</span></h3>
+                            <div class="hstack gap-2 fs-11 text-primary">
+                                <i class="feather-credit-card fs-12"></i>
+                                <span>Filtered</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-2 col-lg-4 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="fs-12 fw-medium text-muted mb-3">Total Collected</div>
+                        <div class="hstack justify-content-between lh-base">
+                            <h3>&#8377;<span class="counter">{{ total_amount|floatformat:0 }}</span></h3>
+                            <div class="hstack gap-2 fs-11 text-success">
+                                <i class="feather-arrow-up-circle fs-12"></i>
+                                <span>Payments</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-2 col-lg-4 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="fs-12 fw-medium text-muted mb-3">Total Pending</div>
+                        <div class="hstack justify-content-between lh-base">
+                            <h3>&#8377;<span class="counter">{{ total_pending|floatformat:0 }}</span></h3>
+                            <div class="hstack gap-2 fs-11 text-warning">
+                                <i class="feather-clock fs-12"></i>
+                                <span>Balance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-2 col-lg-4 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="fs-12 fw-medium text-muted mb-3">Fully Paid</div>
+                        <div class="hstack justify-content-between lh-base">
+                            <h3><span class="counter">{{ paid_count }}</span></h3>
+                            <div class="hstack gap-2 fs-11 text-success">
+                                <i class="feather-check-circle fs-12"></i>
+                                <span>Fees</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-2 col-lg-4 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="fs-12 fw-medium text-muted mb-3">Partial Paid</div>
+                        <div class="hstack justify-content-between lh-base">
+                            <h3><span class="counter">{{ partial_count }}</span></h3>
+                            <div class="hstack gap-2 fs-11 text-info">
+                                <i class="feather-pie-chart fs-12"></i>
+                                <span>Fees</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-2 col-lg-4 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="fs-12 fw-medium text-muted mb-3">Overdue</div>
+                        <div class="hstack justify-content-between lh-base">
+                            <h3><span class="counter">{{ overdue_count|default:0 }}</span></h3>
+                            <div class="hstack gap-2 fs-11 text-danger">
+                                <i class="feather-alert-circle fs-12"></i>
+                                <span>Fees</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="row g-3 mb-1">
+        <div class="col-xxl-5 col-lg-5">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Fee Status Breakdown</h5>
+                    <small class="text-muted">Fee records matching the selected filters</small>
+                </div>
+                <div class="card-body">
+                    <div id="fee-status-chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-7 col-lg-7">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Monthly Collection vs Transactions</h5>
+                    <small class="text-muted">Filtered amount collected and transaction count per month</small>
+                </div>
+                <div class="card-body">
+                    <div id="monthly-trend-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="collapse {% if request.GET.department or request.GET.course or request.GET.batch or request.GET.date_from or request.GET.date_to or request.GET.fee_status or request.GET.amount_from or request.GET.amount_to or request.GET.payment_mode %}show{% endif %}" id="paymentFilterPanel">
+        <div class="card border-0 shadow-sm mb-1">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <input type="hidden" name="q" value="{{ request.GET.q }}">
+                    <div class="col-md-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" id="filterDept" class="form-select">
+                            <option value="">All</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Course</label>
+                        <select name="course" id="filterCourse" class="form-select">
+                            <option value="">All</option>
+                            {% for c in courses %}
+                            <option value="{{ c.id }}" data-dept="{{ c.department_id }}" {% if request.GET.course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Batch</label>
+                        <select name="batch" id="filterBatch" class="form-select">
+                            <option value="">All</option>
+                            {% for b in batches %}
+                            <option value="{{ b.id }}" data-course="{{ b.course_id }}" {% if request.GET.batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.batch_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fee Status</label>
+                        <select name="fee_status" class="form-select">
+                            <option value="">All</option>
+                            {% for key, label in fee_status_choices %}
+                            <option value="{{ key }}" {% if request.GET.fee_status == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Payment Mode</label>
+                        <select name="payment_mode" class="form-select">
+                            <option value="">All</option>
+                            {% for key, label in payment_modes %}
+                            <option value="{{ key }}" {% if request.GET.payment_mode == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Date From</label>
+                        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Date To</label>
+                        <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Amount From</label>
+                        <input type="number" min="0" step="0.01" name="amount_from" value="{{ request.GET.amount_from }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Amount To</label>
+                        <input type="number" min="0" step="0.01" name="amount_to" value="{{ request.GET.amount_to }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Per Page</label>
+                        <select name="per_page" class="form-select">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12 d-flex justify-content-end gap-2">
+                        <button class="btn btn-primary" type="submit">Apply Filter</button>
+                        <a href="{% url 'payment_report' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="card stretch stretch-full">
+        <div class="card-header payment-summary-header">
+            <h5 class="card-title">Payment Summary</h5>
+            <div class="card-header-action">
+                <div class="payment-summary-actions">
+                    <form method="get" class="payment-report-search">
+                        {% for k, v in request.GET.items %}
+                            {% if k != 'q' and k != 'page' %}
+                            <input type="hidden" name="{{ k }}" value="{{ v }}">
+                            {% endif %}
+                        {% endfor %}
+                        <input type="text" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" placeholder="Student name / mobile">
+                        <button class="btn btn-sm btn-primary" type="submit"><i class="feather-search"></i></button>
+                    </form>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#paymentFilterPanel">
+                        <i class="feather-filter me-1"></i>Filter
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="new bootstrap.Modal(document.getElementById('columnSettingsModal')).show()">
+                        <i class="feather-settings"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="paymentReportTable">
+                    <thead>
+                        <tr>
+                            <th data-col="student">Student</th>
+                            <th data-col="mobile">Mobile</th>
+                            <th data-col="course">Course</th>
+                            <th data-col="batch">Batch</th>
+                            <th data-col="last_payment_date">Last Payment Date</th>
+                            <th data-col="transactions">Transactions</th>
+                            <th data-col="total_fee">Total Fee</th>
+                            <th data-col="paid">Paid</th>
+                            <th data-col="fee_status">Fee Status</th>
+                            <th data-col="pending">Pending</th>
+                            <th data-col="due_date">Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in fees %}
+                        <tr>
+                            <td data-col="student">{{ fee.student.student_name|default:"-" }}</td>
+                            <td data-col="mobile">{{ fee.student.mobile|default:"-" }}</td>
+                            <td data-col="course">{{ fee.course.course_name|default:"-" }}</td>
+                            <td data-col="batch">
+                                {% for sc in fee.student.student_courses.all %}
+                                    {% if sc.batch and sc.course_id == fee.course_id %}
+                                        {{ sc.batch.batch_name }}
+                                    {% endif %}
+                                {% empty %}
+                                    -
+                                {% endfor %}
+                            </td>
+                            <td data-col="last_payment_date">{{ fee.last_payment_date|date:"d M Y"|default:"-" }}</td>
+                            <td data-col="transactions">{{ fee.transactions|default:0 }}</td>
+                            <td data-col="total_fee">&#8377;{{ fee.total_fee|floatformat:2 }}</td>
+                            <td data-col="paid">&#8377;{{ fee.paid_amount|floatformat:2 }}</td>
+                            <td data-col="fee_status">
+                                {% if fee.fee_status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                                {% elif fee.fee_status == 'partial' %}
+                                <span class="badge bg-warning text-dark">Partial</span>
+                                {% elif fee.fee_status == 'overdue' %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td data-col="pending">&#8377;{{ fee.pending_amount|floatformat:2 }}</td>
+                            <td data-col="due_date">{{ fee.due_date|date:"d M Y"|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="11" class="text-center text-muted py-4">No records found for the selected filters.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-row px-3 pb-3">
+
+            <!-- PAGINATOR -->
+            <nav class="pagination-glass">
+                <ul class="pagination pagination-modern mb-0">
+
+                    <!-- PREVIOUS -->
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                            &lsaquo; Previous
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&lsaquo; Previous</span>
+                    </li>
+                    {% endif %}
+
+                    <!-- PAGE NUMBERS -->
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link"
+                               href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- NEXT -->
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                            Next &rsaquo;
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next &rsaquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <!-- INFO TEXT -->
+            <div class="pagination-info">
+                Showing
+                <strong>{{ page_obj.start_index }}</strong>
+                -
+                <strong>{{ page_obj.end_index }}</strong>
+                of
+                <strong>{{ paginator.count }}</strong>
+                fee records
+            </div>
+
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.counter').forEach(counter => {
+        const target = parseFloat(counter.textContent.replace(/,/g, ''));
+        if (isNaN(target)) return;
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                counter.textContent = Math.floor(target).toLocaleString();
+                clearInterval(timer);
+            } else {
+                counter.textContent = Math.floor(current).toLocaleString();
+            }
+        }, 20);
+    });
+
+    const feeStatusData = [
+        { label: 'Fully Paid', value: {{ paid_count|default:0 }}, color: '#10b981' },
+        { label: 'Partial', value: {{ partial_count|default:0 }}, color: '#f59e0b' },
+        { label: 'Pending', value: {{ pending_count|default:0 }}, color: '#94a3b8' },
+        { label: 'Overdue', value: {{ overdue_count|default:0 }}, color: '#ef4444' }
+    ];
+
+    if (typeof ApexCharts !== 'undefined') {
+        const hasStatus = feeStatusData.some(d => d.value > 0);
+        if (hasStatus) {
+            new ApexCharts(document.querySelector('#fee-status-chart'), {
+                series: [{ name: 'Fees', data: feeStatusData.map(d => d.value) }],
+                chart: { type: 'bar', height: 300, toolbar: { show: false } },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        horizontal: true,
+                        barHeight: '55%',
+                        dataLabels: { position: 'right' }
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    offsetX: 6,
+                    formatter: val => val > 0 ? val : '',
+                    style: { fontSize: '12px', colors: ['#334155'] }
+                },
+                xaxis: {
+                    categories: feeStatusData.map(d => d.label),
+                    labels: { formatter: val => Math.round(val) }
+                },
+                yaxis: { labels: { style: { fontWeight: 600 } } },
+                colors: feeStatusData.map(d => d.color),
+                fill: { type: 'solid', opacity: 0.9 },
+                grid: { borderColor: '#f1f5f9' },
+                tooltip: { y: { formatter: val => val + ' fee records' } }
+            }).render();
+        } else {
+            document.querySelector('#fee-status-chart').innerHTML = '<p class="text-center text-muted py-4">No data available</p>';
+        }
+    }
+
+    const monthlyData = [
+        {% for item in monthly_collected %}
+        {
+            month: '{{ item.month|date:"M Y" }}',
+            total: {{ item.collected|default:0 }},
+            transactions: {{ item.transactions|default:0 }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (monthlyData.length > 0 && typeof ApexCharts !== 'undefined') {
+        new ApexCharts(document.querySelector('#monthly-trend-chart'), {
+            series: [
+                { name: 'Amount Collected', type: 'area', data: monthlyData.map(d => parseFloat(d.total)) },
+                { name: 'Transactions', type: 'line', data: monthlyData.map(d => parseInt(d.transactions || 0, 10)) }
+            ],
+            chart: { height: 300, toolbar: { show: false } },
+            stroke: { curve: 'smooth', width: [2, 3] },
+            fill: { type: ['gradient', 'solid'], gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+            markers: { size: [0, 4] },
+            xaxis: {
+                categories: monthlyData.map(d => d.month),
+                labels: { rotate: -30, style: { fontSize: '11px' } }
+            },
+            yaxis: [
+                {
+                    title: { text: 'Amount (₹)' },
+                    labels: { formatter: val => '₹' + Math.round(val).toLocaleString() }
+                },
+                {
+                    opposite: true,
+                    title: { text: 'Transactions' },
+                    labels: { formatter: val => Math.round(val) }
+                }
+            ],
+            colors: ['#3b82f6', '#10b981'],
+            legend: { position: 'top' },
+            grid: { borderColor: '#f1f5f9' },
+            tooltip: {
+                shared: true,
+                y: [
+                    { formatter: val => '₹' + parseFloat(val).toLocaleString() },
+                    { formatter: val => parseInt(val || 0, 10) + ' transactions' }
+                ]
+            }
+        }).render();
+    } else if (!monthlyData.length) {
+        document.querySelector('#monthly-trend-chart').innerHTML = '<p class="text-center text-muted py-4">No data available</p>';
+    }
+});
+</script>
+
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;">
+            <div class="modal-header">
+                <h5 class="modal-title">Table Columns</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-semibold mb-0">Visible Columns</h6>
+                    <label class="d-flex align-items-center gap-2 text-primary fw-semibold">
+                        <input type="checkbox" id="selectAllColumns"> Select All
+                    </label>
+                </div>
+                <hr class="my-2">
+                <div class="row g-3">
+                    <div class="col-md-6 column-group">
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="student" checked><span>Student</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="mobile" checked><span>Mobile</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="course" checked><span>Course</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="batch" checked><span>Batch</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="last_payment_date" checked><span>Last Payment Date</span></label>
+                    </div>
+                    <div class="col-md-6 column-group">
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="transactions" checked><span>Transactions</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="total_fee" checked><span>Total Fee</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="paid" checked><span>Paid</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="fee_status" checked><span>Fee Status</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="pending" checked><span>Pending</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="due_date" checked><span>Due Date</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" onclick="cancelColumnSettings()">Cancel</button>
+                <button class="btn btn-primary" type="button" onclick="applyColumnSettings()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const table = document.getElementById('paymentReportTable');
+    const modalEl = document.getElementById('columnSettingsModal');
+    const toggles = document.querySelectorAll('.column-toggle');
+    const selectAllCheckbox = document.getElementById('selectAllColumns');
+    let savedColumnState = {};
+    if (!table || !modalEl || !toggles.length || !selectAllCheckbox) return;
+
+    function getCurrentState() {
+        const state = {};
+        toggles.forEach(t => { state[t.dataset.col] = t.checked; });
+        return state;
+    }
+
+    function setState(state) {
+        toggles.forEach(t => {
+            if (Object.prototype.hasOwnProperty.call(state, t.dataset.col)) {
+                t.checked = state[t.dataset.col];
+            }
+        });
+    }
+
+    function applyColumnVisibility() {
+        toggles.forEach(t => {
+            const visible = t.checked;
+            table.querySelectorAll(`th[data-col="${t.dataset.col}"], td[data-col="${t.dataset.col}"]`).forEach(el => {
+                el.style.display = visible ? '' : 'none';
+            });
+        });
+    }
+
+    function syncSelectAll() {
+        const allChecked = Array.from(toggles).every(t => t.checked);
+        const noneChecked = Array.from(toggles).every(t => !t.checked);
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = !allChecked && !noneChecked;
+    }
+
+    function updateExportLink() {
+        const visibleColumns = [];
+        toggles.forEach(t => {
+            if (t.checked) visibleColumns.push(t.dataset.col);
+        });
+        const baseUrl = "{% url 'payment_report_export' %}";
+        const params = new URLSearchParams(window.location.search);
+        params.delete('columns');
+        visibleColumns.forEach(col => params.append('columns', col));
+        document.getElementById('exportPaymentReportBtn').href = baseUrl + '?' + params.toString();
+    }
+
+    selectAllCheckbox.addEventListener('change', function () {
+        toggles.forEach(t => { t.checked = this.checked; });
+        syncSelectAll();
+    });
+
+    toggles.forEach(t => t.addEventListener('change', syncSelectAll));
+
+    window.applyColumnSettings = function () {
+        savedColumnState = getCurrentState();
+        applyColumnVisibility();
+        updateExportLink();
+        bootstrap.Modal.getInstance(modalEl).hide();
+    };
+
+    window.cancelColumnSettings = function () {
+        setState(savedColumnState);
+        syncSelectAll();
+        bootstrap.Modal.getInstance(modalEl).hide();
+    };
+
+    savedColumnState = getCurrentState();
+    applyColumnVisibility();
+    syncSelectAll();
+    updateExportLink();
+});
+</script>
+
+<style>
+.payment-report-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.payment-report-page .card {
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.payment-report-page .card-header {
+    padding: 14px 16px;
+}
+
+.payment-report-page .card-body {
+    padding: 16px;
+}
+
+.payment-report-page .card-title {
+    margin-bottom: 0;
+}
+
+.payment-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.payment-summary-header .card-header-action {
+    margin-left: auto;
+}
+
+.payment-summary-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.payment-report-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-report-search .form-control {
+    min-width: 220px;
+    max-width: 320px;
+}
+
+.payment-report-page .table-responsive {
+    border-top: 1px solid #eef2f7;
+}
+
+.payment-report-page #fee-status-chart,
+.payment-report-page #monthly-trend-chart {
+    min-height: 280px;
+}
+
+/* ================= GLASS CONTAINER ================= */
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+/* ================= PAGINATION LIST ================= */
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ================= PAGE BUTTONS ================= */
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+/* ================= ONE LINE PAGINATION ================= */
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.column-group { display: flex; flex-direction: column; gap: 10px; }
+.column-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; }
+.column-item:hover { background: #f1f5f9; }
+.column-item input { transform: scale(1.1); }
+.column-item span { font-weight: 500; color: #334155; }
+#selectAllColumns { transform: scale(1.15); }
+.modal-open .nxl-container,
+.modal-open .nxl-content { filter: none !important; }
+
+/* Metric cards: prevent value/meta overflow on narrow widths */
+.payment-metrics-row .card {
+    height: 100%;
+    overflow: hidden;
+}
+
+.payment-metrics-row .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 116px;
+}
+
+.payment-metrics-row .card-body > .hstack {
+    align-items: flex-start !important;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.payment-metrics-row .card-body h3 {
+    margin: 0;
+    max-width: 100%;
+    font-size: clamp(1.05rem, 1.2vw + 0.65rem, 1.55rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.payment-metrics-row .card-body > .hstack > .hstack {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.payment-report-page .card-header .text-muted {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 575.98px) {
+    .payment-report-page {
+        gap: 12px;
+    }
+
+    .payment-summary-header .card-header-action {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .payment-summary-actions {
+        justify-content: flex-start;
+    }
+
+    .payment-report-search {
+        width: 100%;
+    }
+
+    .payment-report-search .form-control {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .pagination-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pagination-row nav {
+        margin: 0;
+    }
+
+    .pagination-info {
+        white-space: normal;
+    }
+
+    .payment-metrics-row .card-body > .hstack > .hstack {
+        margin-left: 0;
+        white-space: normal;
+    }
+}
+</style>
+
+<script>
+(function () {
+    var deptSel = document.getElementById('filterDept');
+    var courseSel = document.getElementById('filterCourse');
+    var batchSel = document.getElementById('filterBatch');
+    if (!deptSel || !courseSel || !batchSel) return;
+
+    var allCourseOpts = Array.from(courseSel.options).slice(1);
+    var allBatchOpts = Array.from(batchSel.options).slice(1);
+
+    function filterCourses(deptId) {
+        var prev = courseSel.value;
+        while (courseSel.options.length > 1) courseSel.remove(1);
+        allCourseOpts.forEach(function (o) {
+            if (!deptId || o.dataset.dept === deptId) courseSel.add(o.cloneNode(true));
+        });
+        courseSel.value = prev;
+        if (!courseSel.value) courseSel.selectedIndex = 0;
+        filterBatches(courseSel.value);
+    }
+
+    function filterBatches(courseId) {
+        var prev = batchSel.value;
+        while (batchSel.options.length > 1) batchSel.remove(1);
+        allBatchOpts.forEach(function (o) {
+            if (!courseId || o.dataset.course === courseId) batchSel.add(o.cloneNode(true));
+        });
+        batchSel.value = prev;
+        if (!batchSel.value) batchSel.selectedIndex = 0;
+    }
+
+    deptSel.addEventListener('change', function () { filterCourses(this.value); });
+    courseSel.addEventListener('change', function () { filterBatches(this.value); });
+    filterCourses(deptSel.value);
+})();
+</script>
+{% endblock %}

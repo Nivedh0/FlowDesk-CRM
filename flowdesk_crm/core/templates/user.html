@@ -1,0 +1,625 @@
+{% extends 'base.html' %}
+{% block title %}Add User{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Add User</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+            <li class="breadcrumb-item">Add</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <form method="POST" id="addUserForm" novalidate>
+                    {% csrf_token %}
+                    {% if field_errors %}
+                    <div class="alert alert-danger py-2 px-3 mb-3 mx-4 mt-4">
+                        Please correct the highlighted fields.
+                    </div>
+                    {% endif %}
+
+                    <!-- Account Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Account Details :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Login credentials for the user</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="username" class="fw-semibold">Username: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user"></i></div>
+                                    <input type="text" id="username" name="username" class="form-control{% if field_errors.username %} is-invalid{% endif %}" required minlength="3" maxlength="150" pattern="[A-Za-z0-9@.+_-]{3,150}" value="{{ form_data.username|default:'' }}" placeholder="Username">
+                                </div>
+                                <div class="invalid-feedback d-block{% if not field_errors.username %} d-none{% endif %}" id="usernameError">
+                                    {{ field_errors.username|default:"Username must be 3+ chars and can include letters, digits, and @/./+/-/_." }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="password" class="fw-semibold">Password: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-lock"></i></div>
+                                    <input type="password" id="password" name="password" class="form-control{% if field_errors.password %} is-invalid{% endif %}" required minlength="8" maxlength="128" placeholder="Password">
+                                </div>
+                                <div class="invalid-feedback d-block{% if not field_errors.password %} d-none{% endif %}" id="passwordError">
+                                    {{ field_errors.password|default:"Password must be at least 8 characters." }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Personal Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Personal Details :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Personal information for the user</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="first_name" class="fw-semibold">First Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user"></i></div>
+                                    <input type="text" id="first_name" name="first_name" class="form-control{% if field_errors.first_name %} is-invalid{% endif %}" required maxlength="150" pattern="[A-Za-z][A-Za-z .'-]{0,149}" value="{{ form_data.first_name|default:'' }}" placeholder="First Name">
+                                </div>
+                                <div class="invalid-feedback d-block{% if not field_errors.first_name %} d-none{% endif %}" id="first_nameError">
+                                    {{ field_errors.first_name|default:"Enter a valid first name." }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="last_name" class="fw-semibold">Last Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user"></i></div>
+                                    <input type="text" id="last_name" name="last_name" class="form-control{% if field_errors.last_name %} is-invalid{% endif %}" required maxlength="150" pattern="[A-Za-z][A-Za-z .'-]{0,149}" value="{{ form_data.last_name|default:'' }}" placeholder="Last Name">
+                                </div>
+                                <div class="invalid-feedback d-block{% if not field_errors.last_name %} d-none{% endif %}" id="last_nameError">
+                                    {{ field_errors.last_name|default:"Enter a valid last name." }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="email" class="fw-semibold">Email: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-mail"></i></div>
+                                    <input type="email" id="email" name="email" class="form-control{% if field_errors.email %} is-invalid{% endif %}" required maxlength="254" value="{{ form_data.email|default:'' }}" placeholder="Email">
+                                </div>
+                                <div class="invalid-feedback d-block{% if not field_errors.email %} d-none{% endif %}" id="emailError">
+                                    {{ field_errors.email|default:"Enter a valid email address." }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="mobile" class="fw-semibold">Mobile: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-phone"></i></div>
+                                    <input type="text" id="mobile" name="mobile" class="form-control{% if field_errors.mobile %} is-invalid{% endif %}" required inputmode="numeric" maxlength="16" pattern="\+?\d{10,15}" value="{{ form_data.mobile|default:'' }}" placeholder="Mobile">
+                                </div>
+                                <div class="invalid-feedback d-block{% if not field_errors.mobile %} d-none{% endif %}" id="mobileError">
+                                    {{ field_errors.mobile|default:"Enter 10 to 15 digits (optional +)." }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Role & Date Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Role & Date :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">User role and registration date</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="role" class="fw-semibold">Role: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="role" id="role" class="form-control{% if field_errors.role %} is-invalid{% endif %}" required>
+                                    <option value="">Select Role</option>
+                                    <option value="trainer" {% if form_data.role == "trainer" %}selected{% endif %}>Trainer</option>
+                                    <option value="cre" {% if form_data.role == "cre" %}selected{% endif %}>CRE</option>
+                                </select>
+                                <div class="invalid-feedback d-block{% if not field_errors.role %} d-none{% endif %}" id="roleError">
+                                    {{ field_errors.role|default:"Please select a role." }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="todayDate" class="fw-semibold">Date: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="text" id="todayDate" class="form-control" readonly required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="trainerSpecializationSection" class="trainer-specialization-section{% if form_data.role != 'trainer' %} d-none{% endif %}">
+                            <div class="row mb-4 align-items-start">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Specialized Department: <span class="text-danger">*</span></label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div id="specializationWrapper" class="specialization-wrapper{% if field_errors.specialization %} is-invalid{% endif %}">
+                                        <div class="specialization-toolbar">
+                                            <select id="departmentPicker" class="form-control">
+                                                <option value="">Select department</option>
+                                                {% for department in departments %}
+                                                <option value="{{ department.id }}">{{ department.department_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="button" id="addDepartmentButton" class="btn btn-outline-primary">Add Department</button>
+                                        </div>
+                                        <div id="selectedDepartmentsContainer" class="selected-departments-container">
+                                            {% if not departments %}
+                                            <div class="specialization-empty">Add departments and courses first to assign trainer specializations.</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="invalid-feedback d-block{% if not field_errors.specialization %} d-none{% endif %}" id="specializationError">
+                                        {{ field_errors.specialization|default:"Select at least one department and choose the trainer's courses." }}
+                                    </div>
+                                    <div class="form-text">Choose one or more departments, then tick the courses the trainer specializes in.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="departmentTemplates" class="d-none">
+                            {% for department in departments %}
+                            <template data-department-id="{{ department.id }}" data-department-name="{{ department.department_name }}">
+                                <div class="specialization-department" data-department-id="{{ department.id }}">
+                                    <div class="specialization-department-header">
+                                        <div>
+                                            <h6 class="specialization-department-title mb-1">{{ department.department_name }}</h6>
+                                            <input type="hidden" name="specialized_departments" value="{{ department.id }}">
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-department-button">Remove</button>
+                                    </div>
+                                    <div class="specialization-courses">
+                                        {% for course in department.course_set.all %}
+                                        <label class="specialization-course-label">
+                                            <input
+                                                type="checkbox"
+                                                class="form-check-input specialization-course-checkbox"
+                                                name="specialized_courses"
+                                                value="{{ course.id }}"
+                                                data-department-id="{{ department.id }}"
+                                                {% if course.id|stringformat:"s" in form_data.specialized_courses %}checked{% endif %}
+                                            >
+                                            <span>{{ course.course_name }}</span>
+                                        </label>
+                                        {% empty %}
+                                        <div class="specialization-empty">No courses available under this department.</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </template>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Action Buttons -->
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                                <i class="feather-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmAddUserModal">
+                                <i class="feather-user-plus me-1"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmAddUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Confirm Add User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="feather-user-plus" style="font-size:36px;color:#4f46e5;"></i>
+                <p class="mt-3 mb-0">Are you sure you want to add this user?</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="addUserForm">Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-backdrop.show {
+    opacity: 0.6;
+}
+
+.trainer-specialization-section {
+    margin-top: 1rem;
+}
+
+.specialization-wrapper {
+    display: grid;
+    gap: 1rem;
+}
+
+.specialization-toolbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.specialization-toolbar .form-control {
+    border-left: 1px solid #d1d5db;
+}
+
+.selected-departments-container {
+    display: grid;
+    gap: 1rem;
+}
+
+.specialization-wrapper.is-invalid {
+    border: 1px solid #dc3545;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #fff5f5;
+}
+
+.specialization-department {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #ffffff;
+}
+
+.specialization-department-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.specialization-department-title {
+    font-weight: 600;
+}
+
+.specialization-courses {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.specialization-course-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #374151;
+}
+
+.specialization-empty {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+</style>
+
+<script>
+const addUserForm = document.getElementById("addUserForm");
+const confirmAddUserModal = document.getElementById("confirmAddUserModal");
+const roleField = document.getElementById("role");
+const trainerSpecializationSection = document.getElementById("trainerSpecializationSection");
+const specializationWrapper = document.getElementById("specializationWrapper");
+const departmentPicker = document.getElementById("departmentPicker");
+const addDepartmentButton = document.getElementById("addDepartmentButton");
+const selectedDepartmentsContainer = document.getElementById("selectedDepartmentsContainer");
+const departmentTemplates = Array.from(document.querySelectorAll("#departmentTemplates template"));
+const initialSpecializedDepartments = {{ form_data.specialized_departments|default:"[]"|safe }};
+
+document.getElementById("todayDate").value = new Date().toISOString().split("T")[0];
+
+function showClientError(fieldId, message) {
+    const input = document.getElementById(fieldId);
+    const errorEl = document.getElementById(`${fieldId}Error`) || document.getElementById(`${fieldId.charAt(0).toUpperCase() + fieldId.slice(1)}Error`);
+    if (!input || !errorEl) return;
+    input.classList.add("is-invalid");
+    errorEl.classList.remove("d-none");
+    if (message) errorEl.textContent = message;
+}
+
+function clearClientError(fieldId) {
+    const input = document.getElementById(fieldId);
+    const errorEl = document.getElementById(`${fieldId}Error`) || document.getElementById(`${fieldId.charAt(0).toUpperCase() + fieldId.slice(1)}Error`);
+    if (!input || !errorEl) return;
+    input.classList.remove("is-invalid");
+    errorEl.classList.add("d-none");
+}
+
+function showSpecializationError(message) {
+    if (!specializationWrapper) return;
+    specializationWrapper.classList.add("is-invalid");
+    const errorEl = document.getElementById("specializationError");
+    if (!errorEl) return;
+    errorEl.classList.remove("d-none");
+    if (message) errorEl.textContent = message;
+}
+
+function clearSpecializationError() {
+    if (!specializationWrapper) return;
+    specializationWrapper.classList.remove("is-invalid");
+    const errorEl = document.getElementById("specializationError");
+    if (!errorEl) return;
+    errorEl.classList.add("d-none");
+}
+
+function getSelectedDepartmentCards() {
+    return Array.from(selectedDepartmentsContainer.querySelectorAll(".specialization-department"));
+}
+
+function updateDepartmentPickerOptions() {
+    if (!departmentPicker) return;
+    const selectedIds = new Set(
+        getSelectedDepartmentCards().map((card) => card.dataset.departmentId)
+    );
+    Array.from(departmentPicker.options).forEach((option) => {
+        if (!option.value) return;
+        option.disabled = selectedIds.has(option.value);
+    });
+    if (departmentPicker.value && selectedIds.has(departmentPicker.value)) {
+        departmentPicker.value = "";
+    }
+}
+
+function bindDepartmentCard(card) {
+    const removeButton = card.querySelector(".remove-department-button");
+    const courseInputs = Array.from(card.querySelectorAll(".specialization-course-checkbox"));
+
+    if (removeButton) {
+        removeButton.addEventListener("click", () => {
+            card.remove();
+            updateDepartmentPickerOptions();
+            clearSpecializationError();
+        });
+    }
+
+    courseInputs.forEach((courseInput) => {
+        courseInput.addEventListener("change", clearSpecializationError);
+    });
+}
+
+function addDepartmentCard(departmentId) {
+    if (!departmentId || !selectedDepartmentsContainer) return;
+    if (selectedDepartmentsContainer.querySelector(`[data-department-id="${departmentId}"]`)) {
+        updateDepartmentPickerOptions();
+        return;
+    }
+
+    const template = departmentTemplates.find(
+        (templateNode) => templateNode.dataset.departmentId === departmentId
+    );
+    if (!template) return;
+
+    const card = template.content.firstElementChild.cloneNode(true);
+    selectedDepartmentsContainer.appendChild(card);
+    bindDepartmentCard(card);
+    updateDepartmentPickerOptions();
+}
+
+function syncTrainerSpecializationState() {
+    if (!trainerSpecializationSection || !roleField) return;
+    const isTrainer = roleField.value === "trainer";
+    trainerSpecializationSection.classList.toggle("d-none", !isTrainer);
+    if (departmentPicker) {
+        departmentPicker.disabled = !isTrainer;
+    }
+    if (addDepartmentButton) {
+        addDepartmentButton.disabled = !isTrainer;
+    }
+    getSelectedDepartmentCards().forEach((card) => {
+        const removeButton = card.querySelector(".remove-department-button");
+        if (removeButton) {
+            removeButton.disabled = !isTrainer;
+        }
+        card.querySelectorAll(".specialization-course-checkbox").forEach((courseCheckbox) => {
+            courseCheckbox.disabled = !isTrainer;
+            if (!isTrainer) {
+                courseCheckbox.checked = false;
+            }
+        });
+    });
+
+    if (!isTrainer) {
+        clearSpecializationError();
+    }
+}
+
+function validateClientSide() {
+    let valid = true;
+    const fields = ["username", "password", "first_name", "last_name", "email", "mobile", "role"];
+    fields.forEach(clearClientError);
+    clearSpecializationError();
+
+    ["username", "first_name", "last_name", "email", "mobile"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = el.value.trim();
+    });
+
+    const username = document.getElementById("username");
+    if (!username.value.match(/^[A-Za-z0-9@.+_-]{3,150}$/)) {
+        valid = false;
+        showClientError("username", "Username must be 3+ chars and can include letters, digits, and @/./+/-/_.");
+    }
+
+    const password = document.getElementById("password");
+    if (password.value.length < 8) {
+        valid = false;
+        showClientError("password", "Password must be at least 8 characters.");
+    }
+
+    const nameRegex = /^[A-Za-z][A-Za-z .'-]{0,149}$/;
+    const firstName = document.getElementById("first_name");
+    if (!nameRegex.test(firstName.value)) {
+        valid = false;
+        showClientError("first_name", "Enter a valid first name.");
+    }
+
+    const lastName = document.getElementById("last_name");
+    if (!nameRegex.test(lastName.value)) {
+        valid = false;
+        showClientError("last_name", "Enter a valid last name.");
+    }
+
+    const email = document.getElementById("email");
+    if (!email.checkValidity()) {
+        valid = false;
+        showClientError("email", "Enter a valid email address.");
+    }
+
+    const mobile = document.getElementById("mobile");
+    if (!mobile.value.match(/^\+?\d{10,15}$/)) {
+        valid = false;
+        showClientError("mobile", "Enter 10 to 15 digits (optional +).");
+    }
+
+    const role = document.getElementById("role");
+    if (!role.value) {
+        valid = false;
+        showClientError("role", "Please select a role.");
+    }
+
+    if (role.value === "trainer") {
+        const selectedDepartments = getSelectedDepartmentCards();
+        const selectedCourses = selectedDepartments.flatMap((card) =>
+            Array.from(card.querySelectorAll(".specialization-course-checkbox:checked"))
+        );
+
+        if (selectedDepartments.length === 0) {
+            valid = false;
+            showSpecializationError("Select at least one specialized department.");
+        } else if (selectedCourses.length === 0) {
+            valid = false;
+            showSpecializationError("Select at least one course for the trainer.");
+        } else {
+            const departmentWithoutCourses = selectedDepartments.find((card) => {
+                return !card.querySelector(".specialization-course-checkbox:checked");
+            });
+
+            if (departmentWithoutCourses) {
+                valid = false;
+                showSpecializationError("Select at least one course under each specialized department.");
+            }
+        }
+    }
+
+    return valid;
+}
+
+if (addDepartmentButton) {
+    addDepartmentButton.addEventListener("click", () => {
+        addDepartmentCard(departmentPicker.value);
+        clearSpecializationError();
+    });
+}
+
+if (roleField) {
+    roleField.addEventListener("change", syncTrainerSpecializationState);
+}
+
+initialSpecializedDepartments.forEach((departmentId) => {
+    addDepartmentCard(String(departmentId));
+});
+
+updateDepartmentPickerOptions();
+syncTrainerSpecializationState();
+
+if (confirmAddUserModal) {
+    confirmAddUserModal.addEventListener("show.bs.modal", function (event) {
+        if (!validateClientSide() || !addUserForm.checkValidity()) {
+            event.preventDefault();
+            addUserForm.reportValidity();
+        }
+    });
+}
+
+addUserForm.addEventListener("submit", function (event) {
+    if (!validateClientSide() || !addUserForm.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+        addUserForm.reportValidity();
+    }
+});
+</script>
+
+{% endblock %}

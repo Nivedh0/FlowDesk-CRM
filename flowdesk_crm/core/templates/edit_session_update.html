@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Edit Session Update</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'session_update_list' %}">Session History</a></li>
+            <li class="breadcrumb-item">Edit</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .card { border: 1px solid #e5e7eb; border-radius: 0.5rem; }
+    .btn { border-radius: 0.375rem; }
+    #topicsContainer .topic-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+</style>
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <!-- Session Info (read-only) -->
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h5 class="fw-bold mb-0">
+                                <span class="d-block mb-2">Session Details :</span>
+                                <span class="fs-12 fw-normal text-muted">Batch and date are fixed — only assignment and topic progress can be edited</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Batch:</label>
+                            </div>
+                            <div class="col-lg-8">
+                                <input type="text" class="form-control" value="{{ session.batch.batch_name }}" disabled>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Session Date:</label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="text" class="form-control" value="{{ session.session_date|date:'d M Y' }}" disabled>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Assignment Section -->
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h5 class="fw-bold mb-0">
+                                <span class="d-block mb-2">Assignment :</span>
+                                <span class="fs-12 fw-normal text-muted">Edit assignment details — changes will sync to the assignment record</span>
+                            </h5>
+                        </div>
+
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Assignment / Tasks:</label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-file-text"></i></div>
+                                    <input type="text" name="assignment_given" id="assignmentGiven" class="form-control"
+                                           value="{{ session.assignment_given|default:'' }}"
+                                           placeholder="Enter assignment or tasks given">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="assignmentDetails" style="{% if session.assignment_given %}display:block;{% else %}display:none;{% endif %}">
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Description:</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <textarea name="assignment_description" class="form-control" rows="2"
+                                              placeholder="Enter assignment description">{% if existing_assignment %}{{ existing_assignment.description|default:'' }}{% endif %}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Due Date:</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                        <input type="date" name="assignment_due_date" class="form-control"
+                                               value="{% if existing_assignment %}{{ existing_assignment.due_date|date:'Y-m-d' }}{% else %}{{ session.session_date|date:'Y-m-d' }}{% endif %}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Marks:</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-award"></i></div>
+                                        <input type="number" name="assignment_marks" id="assignmentMarks" class="form-control"
+                                               min="0" placeholder="Enter assignment marks"
+                                               value="{{ session.assignment_marks|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if topics_data %}
+                    <hr class="mt-0">
+
+                    <!-- Topics Section -->
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h5 class="fw-bold mb-0">
+                                <span class="d-block mb-2">Topics :</span>
+                                <span class="fs-12 fw-normal text-muted">Changes here will reflect in the syllabus view</span>
+                            </h5>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Module</th>
+                                        <th>Topic</th>
+                                        <th style="width:180px;">Status</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for topic in topics_data %}
+                                    <tr>
+                                        <td class="text-muted">{{ topic.module }}</td>
+                                        <td class="fw-semibold">{{ topic.name }}</td>
+                                        <td>
+                                            <select name="status_{{ topic.id }}" class="form-control form-control-sm">
+                                                <option value="not_started" {% if topic.status == 'not_started' %}selected{% endif %}>Not Started</option>
+                                                <option value="partial" {% if topic.status == 'partial' %}selected{% endif %}>Partial</option>
+                                                <option value="completed" {% if topic.status == 'completed' %}selected{% endif %}>Completed</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="remarks_{{ topic.id }}"
+                                                   value="{{ topic.remarks }}"
+                                                   class="form-control form-control-sm"
+                                                   placeholder="Remarks">
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="feather-save me-1"></i> Save Changes
+                        </button>
+                        <a href="{% url 'session_update_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('assignmentGiven').addEventListener('input', function () {
+    const details = document.getElementById('assignmentDetails');
+    const marks = document.getElementById('assignmentMarks');
+    if (this.value.trim()) {
+        details.style.display = 'block';
+        if (marks) marks.required = true;
+    } else {
+        details.style.display = 'none';
+        if (marks) { marks.required = false; marks.value = ''; }
+    }
+});
+</script>
+
+{% endblock %}

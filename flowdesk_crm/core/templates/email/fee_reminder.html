@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overdue Fee Reminder</title>
+    <style>
+        body { margin: 0; padding: 0; background: #f5f7fb; font-family: Arial, sans-serif; color: #1f2937; }
+        .container { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+        .card { background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+        .header { background: linear-gradient(135deg, #dc2626, #f59e0b); color: #ffffff; padding: 28px 32px; }
+        .header h1 { margin: 0 0 6px; font-size: 28px; }
+        .header p { margin: 0; font-size: 14px; opacity: 0.95; }
+        .content { padding: 28px 32px; }
+        .intro { font-size: 15px; line-height: 1.7; margin-bottom: 22px; }
+        .alert-box { background: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #dc2626; border-radius: 10px; padding: 18px; margin-bottom: 24px; }
+        .alert-box h2 { margin: 0 0 8px; font-size: 20px; color: #b91c1c; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .stat { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; }
+        .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 6px; }
+        .stat-value { font-size: 18px; font-weight: 700; color: #111827; }
+        .section { margin-bottom: 24px; }
+        .section h3 { margin: 0 0 12px; font-size: 18px; color: #111827; }
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table th, .info-table td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
+        .info-table th { width: 42%; color: #6b7280; font-weight: 600; }
+        .footer { padding: 0 32px 28px; font-size: 13px; line-height: 1.7; color: #6b7280; }
+        @media (max-width: 640px) {
+            .header, .content, .footer { padding-left: 20px; padding-right: 20px; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>Overdue Fee Reminder</h1>
+                <p>{{ company_name }}</p>
+            </div>
+
+            <div class="content">
+                <div class="intro">
+                    <p>Hello {{ student.student_name }},</p>
+                    <p>Your fee payment is still pending. Please review the overdue details below and complete the payment at the earliest to avoid interruption or inconvenience.</p>
+                </div>
+
+                <div class="alert-box">
+                    <h2>Immediate Attention Required</h2>
+                    <p style="margin: 0;">
+                        {% if fee_record.due_date %}
+                        Your payment was due on <strong>{{ fee_record.due_date|date:"d M Y" }}</strong>
+                        {% if days_overdue %} and is now overdue by <strong>{{ days_overdue }} day{{ days_overdue|pluralize }}</strong>{% endif %}.
+                        {% else %}
+                        Your payment is currently marked as overdue.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="grid">
+                    <div class="stat">
+                        <div class="stat-label">Pending Amount</div>
+                        <div class="stat-value">&#8377;{{ fee_record.pending_amount|default:"0.00" }}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Course</div>
+                        <div class="stat-value">{{ fee_record.course.course_name|default:"Course" }}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Batch</div>
+                        <div class="stat-value">{{ batch.batch_name|default:"Not Assigned" }}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value">{{ fee_record.get_fee_status_display|default:"Overdue" }}</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Fee Summary</h3>
+                    <table class="info-table">
+                        <tr>
+                            <th>Total Fee</th>
+                            <td>&#8377;{{ fee_record.total_fee|default:"0.00" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Paid Amount</th>
+                            <td>&#8377;{{ fee_record.paid_amount|default:"0.00" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Pending Amount</th>
+                            <td>&#8377;{{ fee_record.pending_amount|default:"0.00" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Due Date</th>
+                            <td>{{ fee_record.due_date|date:"d M Y"|default:"-" }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                {% if installment %}
+                <div class="section">
+                    <h3>Overdue Installment</h3>
+                    <table class="info-table">
+                        <tr>
+                            <th>Installment</th>
+                            <td>#{{ installment.installment_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount Due</th>
+                            <td>&#8377;{{ installment.pending_amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Installment Due Date</th>
+                            <td>{{ installment.due_date|date:"d M Y" }}</td>
+                        </tr>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="footer">
+                <p>Please contact the accounts team if you have already completed the payment or need any clarification.</p>
+                <p>Regards,<br>{{ company_name }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

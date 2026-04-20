@@ -1,0 +1,929 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Trainer Syllabus</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Trainer Syllabus</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .trainer-syllabus-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .trainer-syllabus-hero {
+        background: #ffffff;
+        border: 1px solid #dbe4f0;
+        border-radius: 1.25rem;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+        color: #0f172a;
+    }
+
+    .trainer-syllabus-hero .card-body {
+        padding: 2rem;
+    }
+
+    .trainer-hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.8rem;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #1d4ed8;
+    }
+
+    .trainer-hero-title {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.15;
+        margin: 1rem 0 0.75rem;
+        max-width: 720px;
+    }
+
+    .trainer-hero-subtitle {
+        color: #64748b;
+        font-size: 0.98rem;
+        margin-bottom: 0;
+        max-width: 760px;
+    }
+
+    .trainer-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    .trainer-hero-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+        border-radius: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .trainer-hero-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .trainer-hero-btn-primary {
+        background: #1d4ed8;
+        color: #fff;
+        box-shadow: 0 12px 25px rgba(29, 78, 216, 0.18);
+    }
+
+    .trainer-hero-btn-secondary {
+        background: #fff;
+        color: #334155;
+        border: 1px solid #dbe4f0;
+    }
+
+    .trainer-surface-card {
+        border: 1px solid #dbe4f0;
+        border-radius: 1.15rem;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+    }
+
+    .trainer-surface-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .trainer-section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .trainer-section-heading h5,
+    .trainer-section-heading h6 {
+        margin-bottom: 0.25rem;
+        font-weight: 700;
+    }
+
+    .trainer-section-heading p {
+        color: #64748b;
+        margin-bottom: 0;
+        font-size: 0.92rem;
+    }
+
+    .trainer-toggle-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .trainer-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .trainer-toolbar-title {
+        margin: 0;
+    }
+
+    .trainer-toolbar-note {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin: 0.25rem 0 0;
+    }
+
+    .trainer-module-filter {
+        min-width: 220px;
+        max-width: 280px;
+    }
+
+    .trainer-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #dbe4f0;
+        border-radius: 0.9rem;
+        background: #fff;
+        color: #334155;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .trainer-toggle-btn:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .trainer-toggle-btn[aria-expanded="true"] {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    .trainer-filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.5rem;
+    }
+
+    .trainer-context-grid,
+    .trainer-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .trainer-context-item,
+    .trainer-summary-item {
+        border: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-radius: 1rem;
+        padding: 1rem;
+    }
+
+    .trainer-context-label,
+    .trainer-summary-label {
+        display: block;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        margin-bottom: 0.45rem;
+    }
+
+    .trainer-context-value {
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 1rem;
+        line-height: 1.35;
+    }
+
+    .trainer-context-note,
+    .trainer-summary-note {
+        color: #64748b;
+        font-size: 0.82rem;
+        margin-top: 0.35rem;
+    }
+
+    .trainer-summary-item {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .trainer-summary-item::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: var(--summary-accent, #2563eb);
+    }
+
+    .trainer-summary-value {
+        color: #0f172a;
+        font-size: 1.9rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.45rem;
+    }
+
+    .trainer-progress-bar {
+        width: 100%;
+        height: 10px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .trainer-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #2563eb 0%, #22c55e 100%);
+    }
+
+    .trainer-overview-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .trainer-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 0.75rem;
+        background: #eff6ff;
+        color: #1e3a8a;
+        border-radius: 999px;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .trainer-module-card {
+        border: 1px solid #dbe4f0;
+        border-radius: 1.15rem;
+        overflow: hidden;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+    }
+
+    .trainer-module-head {
+        padding: 1.1rem 1.25rem;
+        background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .trainer-module-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .trainer-module-title h6 {
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+
+    .trainer-module-meta {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    .trainer-module-progress-value {
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    .trainer-module-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .trainer-module-chip {
+        background: #fff;
+        border: 1px solid #dbe4f0;
+        border-radius: 999px;
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 0.45rem 0.75rem;
+    }
+
+    .trainer-module-body {
+        padding: 0;
+    }
+
+    .trainer-topic-table {
+        margin-bottom: 0;
+    }
+
+    .trainer-topic-table thead th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .trainer-topic-table tbody td {
+        padding: 1rem;
+        vertical-align: top;
+        border-color: #eef2f7;
+    }
+
+    .trainer-topic-title {
+        color: #0f172a;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .trainer-topic-note {
+        color: #64748b;
+        font-size: 0.82rem;
+    }
+
+    .trainer-status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 110px;
+        padding: 0.42rem 0.72rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .trainer-status-completed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .trainer-status-partial {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .trainer-status-pending {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .trainer-remark-box {
+        min-height: 48px;
+        padding: 0.7rem 0.8rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.85rem;
+        color: #334155;
+        font-size: 0.88rem;
+        line-height: 1.45;
+    }
+
+    .trainer-empty-state {
+        padding: 2rem;
+        text-align: center;
+        border: 1px dashed #cbd5e1;
+        border-radius: 1rem;
+        background: #f8fafc;
+    }
+
+    .trainer-empty-state h6 {
+        color: #0f172a;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
+
+    .trainer-empty-state p {
+        color: #64748b;
+        margin-bottom: 0;
+    }
+
+    html.app-skin-dark .trainer-syllabus-hero {
+        background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+        border-color: #334155;
+        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+        color: #e2e8f0;
+    }
+
+    html.app-skin-dark .trainer-hero-kicker {
+        background: rgba(37, 99, 235, 0.16);
+        border-color: rgba(96, 165, 250, 0.38);
+        color: #93c5fd;
+    }
+
+    html.app-skin-dark .trainer-hero-title,
+    html.app-skin-dark .trainer-context-value,
+    html.app-skin-dark .trainer-summary-value,
+    html.app-skin-dark .trainer-topic-title,
+    html.app-skin-dark .trainer-empty-state h6,
+    html.app-skin-dark .trainer-toolbar-title,
+    html.app-skin-dark .trainer-module-progress-value,
+    html.app-skin-dark .trainer-section-heading h5,
+    html.app-skin-dark .trainer-section-heading h6,
+    html.app-skin-dark .trainer-module-title h6 {
+        color: #f8fafc;
+    }
+
+    html.app-skin-dark .trainer-hero-subtitle,
+    html.app-skin-dark .trainer-section-heading p,
+    html.app-skin-dark .trainer-toolbar-note,
+    html.app-skin-dark .trainer-context-note,
+    html.app-skin-dark .trainer-summary-note,
+    html.app-skin-dark .trainer-topic-note,
+    html.app-skin-dark .trainer-module-meta,
+    html.app-skin-dark .trainer-empty-state p {
+        color: #94a3b8;
+    }
+
+    html.app-skin-dark .trainer-hero-btn-secondary,
+    html.app-skin-dark .trainer-toggle-btn,
+    html.app-skin-dark .trainer-module-chip,
+    html.app-skin-dark .trainer-context-item,
+    html.app-skin-dark .trainer-summary-item,
+    html.app-skin-dark .trainer-module-card,
+    html.app-skin-dark .trainer-empty-state,
+    html.app-skin-dark .trainer-remark-box {
+        background: #0f172a;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+
+    html.app-skin-dark .trainer-surface-card {
+        border-color: #334155;
+        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.35);
+    }
+
+    html.app-skin-dark .trainer-toggle-btn:hover,
+    html.app-skin-dark .trainer-hero-btn-secondary:hover,
+    html.app-skin-dark .trainer-module-chip:hover {
+        background: #162033;
+        color: #f8fafc;
+    }
+
+    html.app-skin-dark .trainer-toggle-btn[aria-expanded="true"] {
+        background: rgba(37, 99, 235, 0.18);
+        border-color: rgba(96, 165, 250, 0.4);
+        color: #93c5fd;
+    }
+
+    html.app-skin-dark .trainer-filter-label {
+        color: #cbd5e1;
+    }
+
+    html.app-skin-dark .trainer-context-item,
+    html.app-skin-dark .trainer-summary-item {
+        background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+        border-color: #334155;
+    }
+
+    html.app-skin-dark .trainer-progress-bar {
+        background: #1e293b;
+    }
+
+    html.app-skin-dark .trainer-pill {
+        background: rgba(37, 99, 235, 0.16);
+        color: #bfdbfe;
+    }
+
+    html.app-skin-dark .trainer-module-head {
+        background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+        border-bottom-color: #334155;
+    }
+
+    html.app-skin-dark .trainer-topic-table {
+        color: #e2e8f0;
+    }
+
+    html.app-skin-dark .trainer-topic-table thead th {
+        background: #111827;
+        color: #94a3b8;
+        border-bottom-color: #334155;
+    }
+
+    html.app-skin-dark .trainer-topic-table tbody td {
+        border-color: #1e293b;
+        color: #e2e8f0;
+        background: #0f172a;
+    }
+
+    html.app-skin-dark .trainer-status-completed {
+        background: rgba(34, 197, 94, 0.18);
+        color: #86efac;
+    }
+
+    html.app-skin-dark .trainer-status-partial {
+        background: rgba(245, 158, 11, 0.18);
+        color: #fcd34d;
+    }
+
+    html.app-skin-dark .trainer-status-pending {
+        background: #1e293b;
+        color: #cbd5e1;
+    }
+
+    html.app-skin-dark .trainer-remark-box {
+        background: #111827;
+        color: #e2e8f0;
+    }
+
+    html.app-skin-dark .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    @media (max-width: 991.98px) {
+        .trainer-context-grid,
+        .trainer-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .trainer-hero-title {
+            font-size: 1.7rem;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .trainer-context-grid,
+        .trainer-summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .trainer-syllabus-hero .card-body,
+        .trainer-surface-card .card-body {
+            padding: 1.2rem;
+        }
+
+        .trainer-module-title,
+        .trainer-section-heading,
+        .trainer-toolbar {
+            flex-direction: column;
+        }
+
+        .trainer-module-filter {
+            width: 100%;
+            max-width: none;
+        }
+    }
+</style>
+
+<div class="main-content">
+    <div class="trainer-syllabus-shell">
+        <div class="card trainer-syllabus-hero">
+            <div class="card-body">
+                <span class="trainer-hero-kicker">
+                    <i class="feather-book-open"></i>
+                    Academic Delivery Dashboard
+                </span>
+                <h2 class="trainer-hero-title">Track syllabus execution and topic-level teaching progress.</h2>
+                <p class="trainer-hero-subtitle">A clean view of batch progress, module coverage, and trainer remarks.</p>
+                <div class="trainer-hero-actions">
+                    <a href="{% url 'session_update' %}" class="trainer-hero-btn trainer-hero-btn-primary">
+                        <i class="feather-edit-3"></i>
+                        Update Today&apos;s Session
+                    </a>
+                    <a href="{% url 'session_update_list' %}" class="trainer-hero-btn trainer-hero-btn-secondary">
+                        <i class="feather-clock"></i>
+                        View Session History
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card trainer-surface-card">
+            <div class="card-body">
+                <div class="trainer-section-heading">
+                    <div>
+                        <h5>Batch Selection</h5>
+                        <p>Select an active batch to review its course structure, delivery status, and pending teaching workload.</p>
+                    </div>
+                </div>
+
+                <form method="get">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-6">
+                            <label for="batch" class="trainer-filter-label">Select Batch</label>
+                            <select id="batch" name="batch" class="form-select" onchange="this.form.submit()">
+                                <option value="">Choose a batch...</option>
+                                {% for batch in batches %}
+                                <option value="{{ batch.id }}" {% if selected_batch and selected_batch.id == batch.id %}selected{% endif %}>
+                                    {{ batch.batch_name }} - {{ batch.course.course_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="trainer-overview-stats">
+                                <span class="trainer-pill"><i class="feather-layers"></i>{{ batches|length }} active batch{{ batches|length|pluralize }}</span>
+                                <span class="trainer-pill"><i class="feather-clipboard"></i>Trainer-facing syllabus review</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if selected_batch %}
+            {% widthratio completed_topics total_topics 100 as overall_completion %}
+
+            <div class="trainer-toggle-row">
+                <button class="trainer-toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#batchAcademicSnapshot" aria-expanded="false" aria-controls="batchAcademicSnapshot">
+                    <i class="feather-info"></i>
+                    Batch Academic Snapshot
+                </button>
+                <button class="trainer-toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#progressSummaryPanel" aria-expanded="false" aria-controls="progressSummaryPanel">
+                    <i class="feather-bar-chart-2"></i>
+                    Progress Summary
+                </button>
+            </div>
+
+            <div class="collapse" id="batchAcademicSnapshot">
+            <div class="card trainer-surface-card">
+                <div class="card-body">
+                    <div class="trainer-section-heading">
+                        <div>
+                            <h5>Batch Academic Snapshot</h5>
+                            <p>Core batch details that matter during delivery review, trainer planning, and academic monitoring.</p>
+                        </div>
+                        <a href="{% url 'session_update' %}" class="btn btn-primary btn-sm">
+                            <i class="feather-plus me-1"></i> Add Session Update
+                        </a>
+                    </div>
+
+                    <div class="trainer-context-grid">
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Batch</span>
+                            <div class="trainer-context-value">{{ selected_batch.batch_name }}</div>
+                            <div class="trainer-context-note">Active teaching batch</div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Course</span>
+                            <div class="trainer-context-value">{{ selected_batch.course.course_name }}</div>
+                            <div class="trainer-context-note">{{ selected_batch.department.department_name|default:"Department not assigned" }}</div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Trainer</span>
+                            <div class="trainer-context-value">{{ selected_batch.trainer.user.get_full_name|default:selected_batch.trainer.user.username|default:"Trainer not assigned" }}</div>
+                            <div class="trainer-context-note">Primary batch owner</div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Schedule Window</span>
+                            <div class="trainer-context-value">{{ selected_batch.start_date|date:"d M Y" }}{% if selected_batch.end_date %} – {{ selected_batch.end_date|date:"d M Y" }}{% endif %}</div>
+                            <div class="trainer-context-note">
+                                {% if selected_batch.start_time %}
+                                    {{ selected_batch.start_time|time:"h:i A" }}{% if selected_batch.end_time %} to {{ selected_batch.end_time|time:"h:i A" }}{% endif %}
+                                {% else %}
+                                    Time slot not configured
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Delivery Mode</span>
+                            <div class="trainer-context-value">{{ selected_batch.mode }}</div>
+                            <div class="trainer-context-note">Classroom setup</div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Batch Capacity</span>
+                            <div class="trainer-context-value">{{ selected_batch.no_of_students }} seats</div>
+                            <div class="trainer-context-note">Configured student strength</div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Modules Planned</span>
+                            <div class="trainer-context-value">{{ modules|length }}</div>
+                            <div class="trainer-context-note">Course structure available for delivery</div>
+                        </div>
+                        <div class="trainer-context-item">
+                            <span class="trainer-context-label">Current Coverage</span>
+                            <div class="trainer-context-value">{{ overall_completion }}%</div>
+                            <div class="trainer-context-note">{{ completed_topics }} of {{ total_topics }} topics completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            {% if modules %}
+            <div class="collapse" id="progressSummaryPanel">
+            <div class="card trainer-surface-card">
+                <div class="card-body">
+                    <div class="trainer-section-heading">
+                        <div>
+                            <h5>Progress Summary</h5>
+                            <p>A quick academic overview to highlight completed delivery, in-progress learning units, and pending syllabus load.</p>
+                        </div>
+                    </div>
+
+                    <div class="trainer-summary-grid">
+                        <div class="trainer-summary-item" style="--summary-accent:#2563eb;">
+                            <span class="trainer-summary-label">Overall Completion</span>
+                            <div class="trainer-summary-value">{{ overall_completion }}%</div>
+                            <div class="trainer-progress-bar mb-2">
+                                <div class="trainer-progress-fill" style="width: {{ overall_completion }}%;"></div>
+                            </div>
+                            <div class="trainer-summary-note">Completed topics against the full syllabus for this batch.</div>
+                        </div>
+                        <div class="trainer-summary-item" style="--summary-accent:#0ea5e9;">
+                            <span class="trainer-summary-label">Total Topics</span>
+                            <div class="trainer-summary-value">{{ total_topics }}</div>
+                            <div class="trainer-summary-note">Total instructional units defined in the syllabus.</div>
+                        </div>
+                        <div class="trainer-summary-item" style="--summary-accent:#16a34a;">
+                            <span class="trainer-summary-label">Completed Topics</span>
+                            <div class="trainer-summary-value">{{ completed_topics }}</div>
+                            <div class="trainer-summary-note">Topics fully delivered and marked complete.</div>
+                        </div>
+                        <div class="trainer-summary-item" style="--summary-accent:#f59e0b;">
+                            <span class="trainer-summary-label">In Progress</span>
+                            <div class="trainer-summary-value">{{ partial_topics }}</div>
+                            <div class="trainer-summary-note">Topics currently in delivery or partially covered.</div>
+                        </div>
+                        <div class="trainer-summary-item" style="--summary-accent:#64748b;">
+                            <span class="trainer-summary-label">Not Started</span>
+                            <div class="trainer-summary-value">{{ not_started_topics }}</div>
+                            <div class="trainer-summary-note">Topics still waiting to be taken up in class.</div>
+                        </div>
+                        <div class="trainer-summary-item" style="--summary-accent:#7c3aed;">
+                            <span class="trainer-summary-label">Modules Covered</span>
+                            <div class="trainer-summary-value">{{ modules|length }}</div>
+                            <div class="trainer-summary-note">Number of structured syllabus modules available.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="trainer-toolbar">
+                        <div>
+                            <h5 class="trainer-toolbar-title">Module Delivery Tracker</h5>
+                            <p class="trainer-toolbar-note">View all modules together or focus on one module at a time.</p>
+                        </div>
+                        <div class="trainer-module-filter">
+                            <label for="moduleFilter" class="trainer-filter-label mb-2">Filter Module</label>
+                            <select id="moduleFilter" class="form-select">
+                                <option value="all">All Modules</option>
+                                {% for module in modules %}
+                                <option value="module-{{ module.id }}">Module {{ forloop.counter }}: {{ module.module_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% for module in modules %}
+                <div class="col-12 trainer-module-panel" data-module-id="module-{{ module.id }}">
+                    <div class="trainer-module-card">
+                        <div class="trainer-module-head">
+                            <div class="trainer-module-title">
+                                <div>
+                                    <h6>
+                                        <i class="feather-book me-2 text-primary"></i>
+                                        Module {{ forloop.counter }}: {{ module.module_name }}
+                                    </h6>
+                                    <div class="trainer-module-meta">Track this module as an academic delivery block with topic-level status and remarks.</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="trainer-summary-label mb-1">Module Completion</div>
+                                    <div class="trainer-module-progress-value">{{ module.progress_percent }}%</div>
+                                </div>
+                            </div>
+
+                            <div class="trainer-progress-bar mt-3">
+                                <div class="trainer-progress-fill" style="width: {{ module.progress_percent }}%;"></div>
+                            </div>
+
+                            <div class="trainer-module-stats">
+                                <span class="trainer-module-chip">{{ module.total_topics }} topic{{ module.total_topics|pluralize }}</span>
+                                <span class="trainer-module-chip">{{ module.completed_topics }} completed</span>
+                                <span class="trainer-module-chip">{{ module.partial_topics }} in progress</span>
+                                <span class="trainer-module-chip">{{ module.not_started_topics }} pending start</span>
+                            </div>
+                        </div>
+
+                        <div class="trainer-module-body">
+                            {% if module.topic_set.all %}
+                            <div class="table-responsive">
+                                <table class="table trainer-topic-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:72px;">#</th>
+                                            <th>Topic & Delivery Note</th>
+                                            <th style="width:160px;">Status</th>
+                                            <th style="width:260px;">Trainer Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for topic in module.topic_set.all %}
+                                        <tr>
+                                            <td class="text-muted fw-semibold">{{ forloop.counter }}</td>
+                                            <td>
+                                                <div class="trainer-topic-title">{{ topic.topic_name }}</div>
+                                            </td>
+                                            <td>
+                                                {% if topic.progress %}
+                                                    {% if topic.progress.status == 'completed' %}
+                                                    <span class="trainer-status-badge trainer-status-completed">Completed</span>
+                                                    {% elif topic.progress.status == 'partial' %}
+                                                    <span class="trainer-status-badge trainer-status-partial">In Progress</span>
+                                                    {% else %}
+                                                    <span class="trainer-status-badge trainer-status-pending">Not Started</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                <span class="trainer-status-badge trainer-status-pending">Not Started</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="trainer-remark-box">
+                                                    {% if topic.progress and topic.progress.remarks %}
+                                                        {{ topic.progress.remarks }}
+                                                    {% else %}
+                                                        No trainer remarks recorded yet.
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="trainer-empty-state m-3">
+                                <h6>No topics added to this module</h6>
+                                <p>Ask the academic team to complete the course structure before the batch begins delivery.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card trainer-surface-card">
+                <div class="card-body">
+                    <div class="trainer-empty-state">
+                        <h6>No syllabus found for this course</h6>
+                        <p>This batch has been created, but its modules and topics have not yet been configured in the course syllabus.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="card trainer-surface-card">
+            <div class="card-body">
+                <div class="trainer-empty-state">
+                    <h6>Select a batch to view the trainer syllabus</h6>
+                    <p>Once you choose a batch, this page will show academic context, progress indicators, module coverage, and trainer remarks in one place.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<script>
+    (function () {
+        const moduleFilter = document.getElementById('moduleFilter');
+        if (!moduleFilter) return;
+
+        const modulePanels = document.querySelectorAll('.trainer-module-panel');
+
+        moduleFilter.addEventListener('change', function () {
+            const selectedValue = this.value;
+
+            modulePanels.forEach(function (panel) {
+                const shouldShow = selectedValue === 'all' || panel.dataset.moduleId === selectedValue;
+                panel.style.display = shouldShow ? '' : 'none';
+            });
+        });
+    })();
+</script>
+{% endblock %}

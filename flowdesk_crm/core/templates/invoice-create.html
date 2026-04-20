@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% block title %}Add Payment{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Add Payment</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'payments' %}">Payments</a></li>
+            <li class="breadcrumb-item">Add</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h5 class="mb-0">Add Payment</h5>
+        <a href="{% url 'payments' %}" class="btn btn-light">Back to Payments</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="card border shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+                            <div>
+                                <h6 class="mb-1">Find Student</h6>
+                                <p class="text-muted mb-0">Pick course, then batch, then student. The invoice list updates automatically.</p>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark border" id="matchCountBadge">0 matches</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label" for="courseFilter">Course</label>
+                                <select class="form-control" id="courseFilter" {% if fee %}disabled{% endif %}>
+                                    <option value="">Choose course</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="batchFilter">Batch</label>
+                                <select class="form-control" id="batchFilter" {% if fee %}disabled{% endif %}>
+                                    <option value="">Choose batch</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="studentFilter">Student</label>
+                                <select class="form-control" id="studentFilter" {% if fee %}disabled{% endif %}>
+                                    <option value="">Choose student</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label" for="studentSearch">Quick Search</label>
+                                <input type="text" class="form-control" id="studentSearch" placeholder="Name, ID, course or batch" {% if fee %}disabled{% endif %}>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="alert alert-light border mb-0 py-3" id="studentSelectionSummary">
+                                    <div class="fw-semibold mb-1" id="selectionTitle">No student selected yet</div>
+                                    <div class="text-muted small" id="selectionHint">Use the filters above to narrow the list and choose an invoice.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Invoice</label>
+                        <select class="form-control" name="fee_id" id="invoiceSelect" {% if fee %}disabled{% endif %} required>
+                            <option value="">Choose invoice</option>
+                            {% for item in fees %}
+                                <option value="{{ item.id }}"
+                                    data-student="{{ item.student.student_name|lower }}"
+                                    data-student-name="{{ item.picker_student_name }}"
+                                    data-student-id="{{ item.picker_student_id }}"
+                                    data-course-id="{{ item.picker_course_id }}"
+                                    data-course-name="{{ item.picker_course_name }}"
+                                    data-batch-id="{{ item.picker_batch_id }}"
+                                    data-batch-key="{{ item.picker_batch_key }}"
+                                    data-batch-name="{{ item.picker_batch_name }}"
+                                    data-search="{{ item.picker_search }}"
+                                    data-total="{{ item.total_fee }}"
+                                    data-pending="{{ item.pending_amount }}"
+                                    {% if fee and fee.id == item.id %}selected{% endif %}>
+                                    {{ item.picker_course_name }} | {{ item.picker_batch_name }} | {{ item.student.student_name }} (#{{ item.student.id }}) - Pending: &#8377;{{ item.pending_amount }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if fee %}
+                            <input type="hidden" name="fee_id" value="{{ fee.id }}">
+                        {% endif %}
+                        <small class="text-muted" id="invoiceHelp">Choose the student invoice you want to collect payment for.</small>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Payment Mode</label>
+                        <select class="form-control" name="payment_mode" required>
+                            {% for mode, label in payment_modes %}
+                                <option value="{{ mode }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Amount Paid</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" name="amount_paid" id="amountPaid" placeholder="Enter amount" required>
+                        <small class="text-muted" id="amountHint"></small>
+                    </div>
+
+                    {% if fee and fee.installments.exists %}
+                    <div class="col-md-6">
+                        <label class="form-label">Pay For Installment (Optional)</label>
+                        <select class="form-control" name="installment_id" id="installmentSelect">
+                            <option value="">Full Payment / Any Amount</option>
+                            {% for inst in fee.installments.all %}
+                                {% if inst.status != 'paid' %}
+                                <option value="{{ inst.id }}" data-amount="{{ inst.amount }}" data-pending="{{ inst.pending_amount }}">
+                                    Installment #{{ inst.installment_number }} - Due: {{ inst.due_date|date:"d M Y" }} - Amount: &#8377;{{ inst.amount }} - Pending: &#8377;{{ inst.pending_amount }}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Select an installment to link this payment, or leave it blank for a flexible payment.</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="col-md-6">
+                        <label class="form-label">Remarks</label>
+                        <input type="text" class="form-control" name="remarks" maxlength="150">
+                    </div>
+                </div>
+
+                {% if fee %}
+                    <hr>
+                    <div class="row g-3">
+                        <div class="col-md-3"><small class="text-muted">Student</small><div class="fw-semibold">{{ fee.student.student_name }}</div></div>
+                        <div class="col-md-3"><small class="text-muted">Course</small><div class="fw-semibold">{{ fee.course.course_name|default:"-" }}</div></div>
+                        <div class="col-md-3"><small class="text-muted">Total Fee</small><div class="fw-semibold">&#8377;{{ fee.total_fee }}</div></div>
+                        <div class="col-md-3"><small class="text-muted">Pending</small><div class="fw-semibold text-danger">&#8377;{{ fee.pending_amount }}</div></div>
+                    </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const installmentSelect = document.getElementById('installmentSelect');
+    const amountPaid = document.getElementById('amountPaid');
+    const amountHint = document.getElementById('amountHint');
+    const invoiceSelect = document.getElementById('invoiceSelect');
+    const courseFilter = document.getElementById('courseFilter');
+    const batchFilter = document.getElementById('batchFilter');
+    const studentFilter = document.getElementById('studentFilter');
+    const studentSearch = document.getElementById('studentSearch');
+    const selectionSummary = document.getElementById('studentSelectionSummary');
+    const selectionTitle = document.getElementById('selectionTitle');
+    const selectionHint = document.getElementById('selectionHint');
+    const invoiceHelp = document.getElementById('invoiceHelp');
+    const matchCountBadge = document.getElementById('matchCountBadge');
+
+    const baseOption = invoiceSelect.options[0].cloneNode(true);
+    const originalOptions = Array.from(invoiceSelect.options).slice(1).map(function(option) {
+        return option.cloneNode(true);
+    });
+    const totalInvoices = originalOptions.length;
+    const feeLocked = invoiceSelect.disabled;
+
+    function sortByLabel(items) {
+        return items.sort(function(left, right) {
+            return left.label.localeCompare(right.label);
+        });
+    }
+
+    function setSelectOptions(selectElement, items, placeholder, selectedValue) {
+        selectElement.innerHTML = '';
+
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholder;
+        selectElement.appendChild(placeholderOption);
+
+        items.forEach(function(item) {
+            const option = document.createElement('option');
+            option.value = item.value;
+            option.textContent = item.label;
+            if (item.meta) {
+                Object.keys(item.meta).forEach(function(key) {
+                    option.dataset[key] = item.meta[key];
+                });
+            }
+            selectElement.appendChild(option);
+        });
+
+        if (selectedValue && items.some(function(item) { return item.value === selectedValue; })) {
+            selectElement.value = selectedValue;
+        } else if (!feeLocked && items.length === 1) {
+            selectElement.value = items[0].value;
+        } else {
+            selectElement.value = '';
+        }
+
+        selectElement.disabled = feeLocked ? true : items.length === 0;
+    }
+
+    function getUniqueItems(options, keyName, labelName, extraMetaBuilder) {
+        const seen = new Map();
+
+        options.forEach(function(option) {
+            const value = option.dataset[keyName];
+            if (!value || seen.has(value)) {
+                return;
+            }
+
+            seen.set(value, {
+                value: value,
+                label: option.dataset[labelName],
+                meta: extraMetaBuilder ? extraMetaBuilder(option) : null
+            });
+        });
+
+        return sortByLabel(Array.from(seen.values()));
+    }
+
+    function getFilteredOptions() {
+        const selectedCourse = courseFilter.value;
+        const selectedBatch = batchFilter.value;
+        const selectedStudent = studentFilter.value;
+        const quickSearch = (studentSearch.value || '').trim().toLowerCase();
+
+        return originalOptions.filter(function(option) {
+            const matchesCourse = !selectedCourse || option.dataset.courseId === selectedCourse;
+            const matchesBatch = !selectedBatch || option.dataset.batchKey === selectedBatch;
+            const matchesStudent = !selectedStudent || option.dataset.studentId === selectedStudent;
+            const matchesSearch = !quickSearch || (option.dataset.search || '').includes(quickSearch);
+            return matchesCourse && matchesBatch && matchesStudent && matchesSearch;
+        });
+    }
+
+    function buildBatchItems(courseId) {
+        const courseScopedOptions = originalOptions.filter(function(option) {
+            return !courseId || option.dataset.courseId === courseId;
+        });
+
+        return getUniqueItems(courseScopedOptions, 'batchKey', 'batchName', function(option) {
+            return { batchId: option.dataset.batchId || '' };
+        });
+    }
+
+    function buildStudentItems(courseId, batchKey, searchTerm) {
+        const filtered = originalOptions.filter(function(option) {
+            const matchesCourse = !courseId || option.dataset.courseId === courseId;
+            const matchesBatch = !batchKey || option.dataset.batchKey === batchKey;
+            const matchesSearch = !searchTerm || (option.dataset.search || '').includes(searchTerm);
+            return matchesCourse && matchesBatch && matchesSearch;
+        });
+
+        return getUniqueItems(filtered, 'studentId', 'studentName', function(option) {
+            return {
+                courseId: option.dataset.courseId,
+                batchKey: option.dataset.batchKey
+            };
+        }).map(function(item) {
+            item.label = item.label + ' (#' + item.value + ')';
+            return item;
+        });
+    }
+
+    function renderInvoiceOptions(filteredOptions) {
+        const currentValue = invoiceSelect.value;
+        invoiceSelect.innerHTML = '';
+        invoiceSelect.appendChild(baseOption.cloneNode(true));
+
+        filteredOptions.forEach(function(option) {
+            invoiceSelect.appendChild(option.cloneNode(true));
+        });
+
+        const matchingCurrent = filteredOptions.find(function(option) {
+            return option.value === currentValue;
+        });
+
+        if (matchingCurrent) {
+            invoiceSelect.value = currentValue;
+        } else if (!feeLocked && filteredOptions.length === 1) {
+            invoiceSelect.value = filteredOptions[0].value;
+        } else {
+            invoiceSelect.value = '';
+        }
+    }
+
+    function updateSummary() {
+        const selectedOption = invoiceSelect.selectedOptions[0];
+        const filteredOptions = getFilteredOptions();
+        const activeStudent = studentFilter.selectedOptions[0] && studentFilter.value
+            ? studentFilter.selectedOptions[0].textContent
+            : null;
+
+        matchCountBadge.textContent = filteredOptions.length + ' of ' + totalInvoices + ' invoices';
+
+        if (selectedOption && selectedOption.value) {
+            selectionSummary.classList.remove('alert-warning');
+            selectionSummary.classList.add('alert-light');
+            selectionTitle.textContent = selectedOption.dataset.studentName + ' (#' + selectedOption.dataset.studentId + ')';
+            selectionHint.textContent = selectedOption.dataset.courseName + ' | ' + selectedOption.dataset.batchName + ' | Pending: Rs ' + selectedOption.dataset.pending;
+            invoiceHelp.textContent = 'Selected invoice total: Rs ' + selectedOption.dataset.total + '. Pending amount: Rs ' + selectedOption.dataset.pending + '.';
+            return;
+        }
+
+        if (activeStudent) {
+            selectionSummary.classList.remove('alert-warning');
+            selectionSummary.classList.add('alert-light');
+            selectionTitle.textContent = activeStudent;
+            selectionHint.textContent = 'Student selected. Pick the invoice for this payment.';
+        } else {
+            selectionSummary.classList.remove('alert-warning');
+            selectionSummary.classList.add('alert-light');
+            selectionTitle.textContent = 'No student selected yet';
+            selectionHint.textContent = 'Pick course, batch and student, or use quick search.';
+        }
+
+        if (filteredOptions.length === 0) {
+            selectionSummary.classList.remove('alert-light');
+            selectionSummary.classList.add('alert-warning');
+            selectionTitle.textContent = 'No matching invoices found';
+            selectionHint.textContent = 'Change the filters or clear quick search to see available students.';
+            invoiceHelp.textContent = 'No invoice matches the current filters.';
+        } else {
+            invoiceHelp.textContent = 'Choose the student invoice you want to collect payment for.';
+        }
+    }
+
+    function syncFiltersFromInvoiceSelection() {
+        const selectedOption = invoiceSelect.selectedOptions[0];
+        if (!selectedOption || !selectedOption.value) {
+            return;
+        }
+
+        courseFilter.value = selectedOption.dataset.courseId || '';
+        refreshBatchOptions(selectedOption.dataset.batchKey || '');
+        refreshStudentOptions(selectedOption.dataset.studentId || '');
+    }
+
+    function refreshBatchOptions(preferredBatchKey) {
+        const batchItems = buildBatchItems(courseFilter.value);
+        const currentBatchValue = preferredBatchKey !== undefined ? preferredBatchKey : batchFilter.value;
+        setSelectOptions(batchFilter, batchItems, 'Choose batch', currentBatchValue);
+    }
+
+    function refreshStudentOptions(preferredStudentId) {
+        const searchTerm = (studentSearch.value || '').trim().toLowerCase();
+        const studentItems = buildStudentItems(courseFilter.value, batchFilter.value, searchTerm);
+        const currentStudentValue = preferredStudentId !== undefined ? preferredStudentId : studentFilter.value;
+        setSelectOptions(studentFilter, studentItems, 'Choose student', currentStudentValue);
+    }
+
+    function refreshInvoices() {
+        renderInvoiceOptions(getFilteredOptions());
+        updateSummary();
+    }
+
+    function refreshAll() {
+        refreshBatchOptions();
+        if (!batchFilter.value) {
+            studentFilter.value = '';
+        }
+        refreshStudentOptions();
+        refreshInvoices();
+    }
+
+    const courseItems = getUniqueItems(originalOptions, 'courseId', 'courseName');
+    setSelectOptions(courseFilter, courseItems, 'Choose course', '');
+
+    if (feeLocked) {
+        syncFiltersFromInvoiceSelection();
+        refreshInvoices();
+        courseFilter.disabled = true;
+        batchFilter.disabled = true;
+        studentFilter.disabled = true;
+        studentSearch.disabled = true;
+    } else {
+        refreshAll();
+    }
+
+    courseFilter.addEventListener('change', function() {
+        batchFilter.value = '';
+        studentFilter.value = '';
+        refreshAll();
+    });
+
+    batchFilter.addEventListener('change', function() {
+        studentFilter.value = '';
+        refreshStudentOptions();
+        refreshInvoices();
+    });
+
+    studentFilter.addEventListener('change', refreshInvoices);
+    studentSearch.addEventListener('input', function() {
+        studentFilter.value = '';
+        refreshStudentOptions();
+        refreshInvoices();
+    });
+    invoiceSelect.addEventListener('change', updateSummary);
+
+    if (installmentSelect && amountPaid) {
+        installmentSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const fullAmount = selectedOption.dataset.amount;
+            const pendingAmount = selectedOption.dataset.pending;
+
+            if (pendingAmount) {
+                amountPaid.value = pendingAmount;
+                amountPaid.max = pendingAmount;
+                if (amountHint) {
+                    amountHint.textContent = 'Installment amount: Rs ' + fullAmount + ', pending: Rs ' + pendingAmount + '. You can pay any amount up to the pending balance.';
+                }
+            } else {
+                amountPaid.removeAttribute('max');
+                amountPaid.value = '';
+                if (amountHint) {
+                    amountHint.textContent = '';
+                }
+            }
+        });
+    }
+
+    updateSummary();
+});
+</script>
+{% endblock %}

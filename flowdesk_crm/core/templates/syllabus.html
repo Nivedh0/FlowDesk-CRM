@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Syllabus</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Syllabus</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mb-3 mx-4 mt-4">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+
+                <div class="card-body">
+                    <div class="mb-5 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 me-4">
+                            <span class="d-block mb-2">Course Syllabus :</span>
+                            <span class="fs-12 fw-normal text-muted text-truncate-1-line">Manage modules and topics for courses</span>
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModuleModal">
+                                <i class="feather-plus me-1"></i> Add Module
+                            </button>
+                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addTopicsModal">
+                                <i class="feather-plus me-1"></i> Add Topics
+                            </button>
+                        </div>
+                    </div>
+
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <select name="filter_course" class="form-control" onchange="this.form.submit()">
+                                    <option value="">All Courses</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}" {% if request.GET.filter_course == course.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ course.course_name }} ({{ course.department.department_name }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    {% for module in modules %}
+                    <div class="card mb-3" style="border:1px solid #e2e8f0;">
+                        <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8fafc;">
+                            <h6 class="mb-0">
+                                <i class="feather-book me-2" style="color:#4f46e5;"></i>
+                                <strong>{{ module.module_name }}</strong>
+                                <small class="text-muted ms-2">({{ module.course.course_name }})</small>
+                            </h6>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-light" onclick="editModule({{ module.id }}, '{{ module.module_name }}', {{ module.course.id }})">
+                                    <i class="feather-edit-2"></i>
+                                </button>
+                                <a href="{% url 'delete_module' module.id %}" class="btn btn-sm btn-light text-danger" onclick="return confirm('Delete this module?')">
+                                    <i class="feather-trash-2"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if module.topic_set.all %}
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    {% for topic in module.topic_set.all %}
+                                    <tr>
+                                        <td style="width:50px;text-align:center;color:#94a3b8;">{{ forloop.counter }}</td>
+                                        <td>{{ topic.topic_name }}</td>
+                                        <td style="width:100px;text-align:center;">
+                                            <div style="display:inline-flex;gap:8px;align-items:center;">
+                                                <button class="btn btn-sm text-primary" style="border:none;background:none;padding:4px;" onclick="editTopic({{ topic.id }}, '{{ topic.topic_name }}', {{ module.id }})">
+                                                    <i class="feather-edit-2" style="font-size:16px;"></i>
+                                                </button>
+                                                <a href="{% url 'delete_topic' topic.id %}" class="btn btn-sm text-danger" style="border:none;background:none;padding:4px;" onclick="return confirm('Delete this topic?')">
+                                                    <i class="feather-trash-2" style="font-size:16px;"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                            <p class="text-muted text-center py-3 mb-0">No topics added yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">No modules found. Add a module to get started.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModuleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'add_module' %}">
+                {% csrf_token %}
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-semibold">Add Module</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Course <span class="text-danger">*</span></label>
+                        <select name="course" class="form-control" required>
+                            <option value="">Select Course</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.course_name }} ({{ course.department.department_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Module Name <span class="text-danger">*</span></label>
+                        <input type="text" name="module_name" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Module</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModuleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit_module' %}">
+                {% csrf_token %}
+                <input type="hidden" name="module_id" id="edit_module_id">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-semibold">Edit Module</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Course <span class="text-danger">*</span></label>
+                        <select name="course" id="edit_course" class="form-control" required>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.course_name }} ({{ course.department.department_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Module Name <span class="text-danger">*</span></label>
+                        <input type="text" name="module_name" id="edit_module_name" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addTopicsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'add_topics' %}">
+                {% csrf_token %}
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-semibold">Add Topics</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Module <span class="text-danger">*</span></label>
+                        <select name="module" class="form-control" required>
+                            <option value="">Select Module</option>
+                            {% for module in modules %}
+                            <option value="{{ module.id }}">{{ module.module_name }} ({{ module.course.course_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Topics <span class="text-danger">*</span></label>
+                        <div id="topicInputs">
+                            <input type="text" name="topic_names[]" class="form-control mb-2" placeholder="Topic 1" required>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTopicInput()">
+                            <i class="feather-plus"></i> Add More
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Topics</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editTopicModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit_topic' %}">
+                {% csrf_token %}
+                <input type="hidden" name="topic_id" id="edit_topic_id">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-semibold">Edit Topic</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Module <span class="text-danger">*</span></label>
+                        <select name="module" id="edit_topic_module" class="form-control" required>
+                            {% for module in modules %}
+                            <option value="{{ module.id }}">{{ module.module_name }} ({{ module.course.course_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Topic Name <span class="text-danger">*</span></label>
+                        <input type="text" name="topic_name" id="edit_topic_name" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+</style>
+
+<script>
+function addTopicInput() {
+    const container = document.getElementById('topicInputs');
+    const count = container.children.length + 1;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'topic_names[]';
+    input.className = 'form-control mb-2';
+    input.placeholder = 'Topic ' + count;
+    container.appendChild(input);
+}
+
+function editModule(id, name, courseId) {
+    document.getElementById('edit_module_id').value = id;
+    document.getElementById('edit_module_name').value = name;
+    document.getElementById('edit_course').value = courseId;
+    new bootstrap.Modal(document.getElementById('editModuleModal')).show();
+}
+
+function editTopic(id, name, moduleId) {
+    document.getElementById('edit_topic_id').value = id;
+    document.getElementById('edit_topic_name').value = name;
+    document.getElementById('edit_topic_module').value = moduleId;
+    new bootstrap.Modal(document.getElementById('editTopicModal')).show();
+}
+</script>
+{% endblock %}

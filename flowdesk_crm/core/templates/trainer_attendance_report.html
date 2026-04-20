@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% block title %}Trainer Attendance{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Trainer Attendance</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Trainer Attendance</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#trainerFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .trainer-att-wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+    }
+
+    .trainer-card {
+        border: 1px solid #d9e2ef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    .trainer-card .card-head {
+        padding: 14px 16px;
+        border-bottom: 1px solid #e8eef7;
+        background: #f8fbff;
+        border-radius: 14px 14px 0 0;
+    }
+
+    .stat-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        padding: 12px 14px;
+    }
+
+    .stat-card small {
+        color: #64748b;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .stat-card strong {
+        font-size: 1.05rem;
+    }
+
+    .badge-soft-success {
+        background: #e8f9f1;
+        color: #047857;
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-soft-danger {
+        background: #ffecef;
+        color: #be123c;
+        border: 1px solid #fecdd3;
+    }
+</style>
+
+<div class="main-content">
+    <div class="trainer-att-wrap">
+
+        <div class="trainer-card mb-3">
+            <div class="collapse border-top p-3 {% if has_active_filters %}show{% endif %}" id="trainerFilterPanel">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">Trainer</label>
+                        <select name="trainer" class="form-select">
+                            <option value="">All Trainers</option>
+                            {% for trainer in trainers %}
+                                <option value="{{ trainer.id }}" {% if selected_trainer == trainer.id|stringformat:"s" %}selected{% endif %}>
+                                    {% if trainer.user.get_full_name %}
+                                        {{ trainer.user.get_full_name }}
+                                    {% else %}
+                                        {{ trainer.user.username }}
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">Batch</label>
+                        <select name="batch" class="form-select">
+                            <option value="">All Batches</option>
+                            {% for batch in batches %}
+                                <option value="{{ batch.id }}" {% if selected_batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ batch.batch_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">Attendance</label>
+                        <select name="attendance" class="form-select">
+                            <option value="all" {% if selected_attendance == "all" %}selected{% endif %}>All</option>
+                            <option value="marked" {% if selected_attendance == "marked" %}selected{% endif %}>Marked</option>
+                            <option value="not_marked" {% if selected_attendance == "not_marked" %}selected{% endif %}>Not Marked</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">Day Wise</label>
+                        <input type="date" name="day" value="{{ selected_day }}" class="form-control">
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">Month Wise</label>
+                        <input type="month" name="month" value="{{ selected_month }}" class="form-control">
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">From Date</label>
+                        <input type="date" name="from_date" value="{{ selected_from_date }}" class="form-control">
+                    </div>
+                    <div class="col-lg-2 col-md-4">
+                        <label class="form-label mb-1">To Date</label>
+                        <input type="date" name="to_date" value="{{ selected_to_date }}" class="form-control">
+                    </div>
+                    <div class="col-lg-3 col-md-8 d-flex gap-2">
+                        <button class="btn btn-primary px-4">Apply</button>
+                        <a href="{% url 'trainer_attendance_report' %}" class="btn btn-light px-4">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <div class="stat-card"><small>Total Updates</small><strong>{{ summary.total_updates|default:0 }}</strong></div>
+            </div>
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <div class="stat-card"><small>Marked</small><strong class="text-success">{{ summary.marked_updates|default:0 }}</strong></div>
+            </div>
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <div class="stat-card"><small>Not Marked</small><strong class="text-danger">{{ summary.not_marked_updates|default:0 }}</strong></div>
+            </div>
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <div class="stat-card"><small>Active Trainers</small><strong>{{ summary.active_trainers|default:0 }}</strong></div>
+            </div>
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <div class="stat-card"><small>Active Days</small><strong>{{ summary.active_days|default:0 }}</strong></div>
+            </div>
+        </div>
+
+        <div class="trainer-card mb-3">
+            <div class="card-head">
+                <h6 class="mb-0">Month Wise Summary</h6>
+            </div>
+            <div class="table-responsive p-3">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Month</th>
+                            <th>Trainer</th>
+                            <th>Working Days</th>
+                            <th>Total Updates</th>
+                            <th>Marked</th>
+                            <th>Not Marked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in monthly_summary_rows %}
+                            <tr>
+                                <td>{{ row.month|date:"M Y" }}</td>
+                                <td>{{ row.trainer }}</td>
+                                <td>{{ row.working_days }}</td>
+                                <td>{{ row.total_updates }}</td>
+                                <td class="text-success">{{ row.marked_updates }}</td>
+                                <td class="text-danger">{{ row.not_marked_updates }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">No month-wise data found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="trainer-card mb-3">
+            <div class="card-head">
+                <h6 class="mb-0">Day Wise Summary</h6>
+            </div>
+            <div class="table-responsive p-3">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Trainer</th>
+                            <th>Batches</th>
+                            <th>Total Updates</th>
+                            <th>Marked</th>
+                            <th>Not Marked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in day_summary_rows %}
+                            <tr>
+                                <td>{{ row.session_date|date:"d M Y" }}</td>
+                                <td>{{ row.trainer }}</td>
+                                <td>{{ row.batch_count }}</td>
+                                <td>{{ row.total_updates }}</td>
+                                <td class="text-success">{{ row.marked_updates }}</td>
+                                <td class="text-danger">{{ row.not_marked_updates }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">No day-wise data found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="trainer-card">
+            <div class="card-head d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Detailed Session Updates</h6>
+                {% if is_detail_trimmed %}
+                    <small class="text-muted">Showing latest {{ detail_limit }} rows</small>
+                {% endif %}
+            </div>
+            <div class="table-responsive p-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Trainer</th>
+                            <th>Batch</th>
+                            <th>Course</th>
+                            <th>Attendance</th>
+                            <th>Assignment</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions %}
+                            <tr>
+                                <td>{{ session.session_date|date:"d M Y" }}</td>
+                                <td>
+                                    {% if session.updated_by.user.get_full_name %}
+                                        {{ session.updated_by.user.get_full_name }}
+                                    {% else %}
+                                        {{ session.updated_by.user.username }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ session.batch.batch_name }}</td>
+                                <td>{{ session.batch.course.course_name|default:"-" }}</td>
+                                <td>
+                                    {% if session.attendance_marked %}
+                                        <span class="badge badge-soft-success">Marked</span>
+                                    {% else %}
+                                        <span class="badge badge-soft-danger">Not Marked</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ session.assignment_given|default:"-" }}</td>
+                                <td>{{ session.remarks|default:"-" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center text-muted py-4">No records found for selected filters.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

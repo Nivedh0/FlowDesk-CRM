@@ -1,0 +1,428 @@
+{% extends 'base.html' %}
+{% block title %}Edit Student{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Edit Student</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'students' %}">Students</a></li>
+            <li class="breadcrumb-item">Edit</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <form method="POST" id="updateStudentForm">
+                    {% csrf_token %}
+
+                    <!-- Basic Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Student Info :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Basic information for the student</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="studentNameInput" class="fw-semibold">Student Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user"></i></div>
+                                    <input type="text" name="student_name" class="form-control" id="studentNameInput" value="{{ student.student_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="emailInput" class="fw-semibold">Email: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-mail"></i></div>
+                                    <input type="email" name="email" class="form-control" id="emailInput" value="{{ student.email }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="mobileInput" class="fw-semibold">Mobile: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-phone"></i></div>
+                                    <input type="text" name="mobile" class="form-control" id="mobileInput" value="{{ student.mobile }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Status: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="status" class="form-control">
+                                    <option value="enrolled" {% if student.status == "enrolled" %}selected{% endif %}>Enrolled</option>
+                                    <option value="active" {% if student.status == "active" %}selected{% endif %}>Active</option>
+                                    <option value="completed" {% if student.status == "completed" %}selected{% endif %}>Completed</option>
+                                    <option value="dropped" {% if student.status == "dropped" %}selected{% endif %}>Dropped</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Enrolled Date: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="date" name="enrolled_date" class="form-control" value="{{ student.enrolled_date|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Courses Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Courses :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select departments and courses for the student</span>
+                            </h5>
+                        </div>
+                        <div id="courseContainer">
+                            {% for sc in existing_courses %}
+                            <div class="course-row mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="form-label">Department</label>
+                                        <select name="departments[]" class="form-control dept-select" required onchange="filterCoursesForRow(this)">
+                                            <option value="">Select Department</option>
+                                            {% for dept in departments %}
+                                            <option value="{{ dept.id }}" {% if sc.department_id == dept.id %}selected{% endif %}>{{ dept.department_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="form-label">Course</label>
+                                        <select name="courses[]" class="form-control course-select" required>
+                                            <option value="">Select Course</option>
+                                            {% for course in courses %}
+                                            <option value="{{ course.id }}" data-department="{{ course.department.id }}" {% if sc.course_id == course.id %}selected{% endif %}>{{ course.course_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-2 mb-2">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeCourseRow(this)" {% if forloop.first %}style="display:none;"{% endif %}>Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="course-row mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="form-label">Department</label>
+                                        <select name="departments[]" class="form-control dept-select" required onchange="filterCoursesForRow(this)">
+                                            <option value="">Select Department</option>
+                                            {% for dept in departments %}
+                                            <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="form-label">Course</label>
+                                        <select name="courses[]" class="form-control course-select" required disabled>
+                                            <option value="">Select Department First</option>
+                                            {% for course in courses %}
+                                            <option value="{{ course.id }}" data-department="{{ course.department.id }}">{{ course.course_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-2 mb-2">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeCourseRow(this)" style="display:none;">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addCourseRow()">
+                            <i class="feather-plus"></i> Add Another Course
+                        </button>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Address Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Address :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Student address information</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="houseNameInput" class="fw-semibold">House Name: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-home"></i></div>
+                                    <input type="text" name="house_name" class="form-control" id="houseNameInput" value="{{ student.house_name }}" placeholder="House Name">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="placeInput" class="fw-semibold">Place: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-map"></i></div>
+                                    <input type="text" name="place" class="form-control" id="placeInput" value="{{ student.place }}" placeholder="Place">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="districtInput" class="fw-semibold">District: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-map-pin"></i></div>
+                                    <input type="text" name="district" class="form-control" id="districtInput" value="{{ student.district }}" placeholder="District">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="stateInput" class="fw-semibold">State: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-globe"></i></div>
+                                    <input type="text" name="state" class="form-control" id="stateInput" value="{{ student.state }}" placeholder="State">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="locationInput" class="fw-semibold">Location: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-navigation"></i></div>
+                                    <input type="text" name="location" class="form-control" id="locationInput" value="{{ student.location }}" placeholder="Location">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Action Buttons -->
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'students' %}" class="btn btn-outline-secondary">
+                                <i class="feather-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmUpdateStudentModal">
+                                <i class="feather-save me-1"></i> Update Student
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmUpdateStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Confirm Update</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="feather-user-check" style="font-size:36px;color:#4f46e5;"></i>
+                <p class="mt-3 mb-0">Are you sure you want to update this student?</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="updateStudentForm">Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getSelectedCourses() {
+    const selectedCourses = [];
+
+    document.querySelectorAll('#courseContainer .course-select').forEach(select => {
+        if (select.value) {
+            selectedCourses.push(select.value);
+        }
+    });
+
+    return selectedCourses;
+}
+
+function updateAllCourseSelects() {
+    const selectedCourses = getSelectedCourses();
+
+    document.querySelectorAll('#courseContainer .course-row').forEach(row => {
+        const deptSelect = row.querySelector('.dept-select');
+        const courseSelect = row.querySelector('.course-select');
+        const currentValue = courseSelect.value;
+        const deptId = deptSelect.value;
+        let hasVisibleCourse = false;
+
+        Array.from(courseSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                option.disabled = false;
+                option.textContent = deptId ? 'Select Course' : 'Select Department First';
+                return;
+            }
+
+            const matchesDepartment = option.dataset.department === deptId;
+            const isSelectedElsewhere = selectedCourses.includes(option.value) && option.value !== currentValue;
+            const shouldHide = !matchesDepartment || isSelectedElsewhere;
+
+            option.hidden = shouldHide;
+            option.disabled = shouldHide;
+            option.style.display = shouldHide ? 'none' : '';
+
+            if (!shouldHide) {
+                hasVisibleCourse = true;
+            }
+        });
+
+        if (!deptId) {
+            courseSelect.disabled = true;
+        } else {
+            courseSelect.disabled = !hasVisibleCourse;
+            if (!hasVisibleCourse) {
+                courseSelect.options[0].textContent = 'No Courses Available';
+            }
+        }
+    });
+}
+
+function filterCoursesForRow(deptSelect, preserveCourse = false) {
+    const row = deptSelect.closest('.course-row');
+    const courseSelect = row.querySelector('.course-select');
+    const deptId = deptSelect.value;
+    const currentCourse = courseSelect.value;
+
+    if (!deptId) {
+        courseSelect.value = '';
+        courseSelect.disabled = true;
+        updateAllCourseSelects();
+        return;
+    }
+
+    courseSelect.disabled = false;
+    const selectedOption = Array.from(courseSelect.options).find(
+        option => option.value === currentCourse && option.dataset.department === deptId
+    );
+
+    courseSelect.value = preserveCourse && selectedOption ? currentCourse : '';
+    updateAllCourseSelects();
+}
+
+function addCourseRow() {
+    const container = document.getElementById('courseContainer');
+    const firstRow = container.querySelector('.course-row');
+    const newRow = firstRow.cloneNode(true);
+    
+    newRow.querySelectorAll('select').forEach(select => {
+        select.value = '';
+        select.setCustomValidity('');
+    });
+    newRow.querySelector('.course-select').disabled = true;
+    newRow.querySelector('.btn-outline-danger').style.display = 'block';
+    
+    container.appendChild(newRow);
+    updateAllCourseSelects();
+}
+
+function removeCourseRow(btn) {
+    const container = document.getElementById('courseContainer');
+    if (container.querySelectorAll('.course-row').length === 1) {
+        return;
+    }
+
+    btn.closest('.course-row').remove();
+    updateAllCourseSelects();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.dept-select').forEach(select => {
+        filterCoursesForRow(select, true);
+    });
+
+    document.addEventListener('change', function(event) {
+        if (event.target.classList.contains('dept-select')) {
+            filterCoursesForRow(event.target);
+        }
+
+        if (event.target.classList.contains('course-select')) {
+            updateAllCourseSelects();
+        }
+    });
+
+    updateAllCourseSelects();
+});
+</script>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-backdrop.show {
+    opacity: 0.6;
+}
+</style>
+
+{% endblock %}

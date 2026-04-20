@@ -1,0 +1,510 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Lead Profile</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'leads' %}">Leads</a></li>
+            <li class="breadcrumb-item">Profile</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+/* PROFILE CARD */
+.avatar-circle{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#4e73df,#1cc88a);
+    color:white;
+    font-size:30px;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:auto;
+}
+.lead-info p{
+    margin-bottom:8px;
+    color:#555;
+}
+
+/* TIMELINE */
+.timeline{
+    position:relative;
+    margin-left:15px;
+}
+.timeline::before{
+    content:"";
+    position:absolute;
+    left:12px;
+    top:0;
+    bottom:0;
+    width:2px;
+    background:#e9ecef;
+}
+.timeline-item{
+    position:relative;
+    margin-bottom:30px;
+    padding-left:40px;
+}
+.timeline-icon{
+    position:absolute;
+    left:-2px;
+    background:#fff;
+    border:2px solid #0d6efd;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    text-align:center;
+    line-height:24px;
+    font-size:14px;
+}
+.timeline-content{
+    background:#f8f9fa;
+    padding:15px;
+    border-radius:10px;
+}
+.activity-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.header-actions{
+    display:flex;
+    gap:10px;
+}
+
+.activity-tabs .tab{
+    display:inline-block;
+    padding:8px 15px;
+    border-radius:5px;
+    cursor:pointer;
+    color:#6c757d;
+    font-weight:500;
+}
+/* Activity header tabs */
+.activity-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+/* Tabs container */
+.activity-tabs{
+    display:flex;
+    gap:25px;
+    border-bottom:1px solid #e5e7eb;
+    width:100%;
+    padding-bottom:10px;
+}
+
+/* Each tab */
+.activity-tabs .tab{
+    font-weight:600;
+    color:#64748b;
+    cursor:pointer;
+    padding-bottom:8px;
+    position:relative;
+    transition:.3s;
+}
+
+/* Hover */
+.activity-tabs .tab:hover{
+    color:#4f46e5;
+}
+
+/* Active tab */
+.activity-tabs .active{
+    color:#4f46e5;
+}
+
+.activity-tabs .active::after{
+    content:"";
+    position:absolute;
+    bottom:-11px;
+    left:0;
+    width:100%;
+    height:3px;
+    background:#4f46e5;
+    border-radius:3px;
+}
+.status-enrolled{
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.task-modal{
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+    z-index:9999;
+}
+
+.task-modal-content{
+    background:white;
+    width:420px;
+    padding:25px;
+    border-radius:12px;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+}
+
+.task-modal-content input,
+.task-modal-content select,
+.task-modal-content textarea{
+    width:100%;
+    margin-bottom:12px;
+    padding:8px;
+    border:1px solid #ddd;
+    border-radius:6px;
+}
+
+.close{
+    float:right;
+    font-size:22px;
+    cursor:pointer;
+}
+</style>
+
+<div class="row">
+
+    <!-- LEFT PROFILE -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 p-4">
+            <a href="{% url 'leads' %}" class="back-link mb-3">
+                ← Back to Leads
+            </a>
+
+
+            <!-- Avatar + Name -->
+            <div class="text-center">
+                <div class="avatar-circle">
+                    {{ lead.full_name|first|upper }}
+                </div>
+                <h4 class="mt-3">{{ lead.full_name }}</h4>
+
+                <span class="badge bg-success px-3 py-2">
+                    {{ lead.status.status_name }}
+                </span>
+            </div>
+
+            <hr>
+
+            <!-- CONTACT INFO -->
+            <h6 class="mb-3">Contact Info</h6>
+            <div class="lead-info">
+                <p><b>Phone:</b> {{ lead.mobile }}</p>
+                <p><b>Email:</b> {{ lead.email }}</p>
+                <p><b>WhatsApp:</b> {{ lead.whatsapp|default:"—" }}</p>
+                <p><b>Location:</b> {{ lead.location }}</p>
+                <p class="mb-0"><b>Address:</b></p>
+                <p class="ms-2 mb-0">House: {{ lead.house_name|default:"—" }}</p>
+                <p class="ms-2 mb-0">Place: {{ lead.place|default:"—" }}</p>
+                <p class="ms-2 mb-0">District: {{ lead.district|default:"—" }}</p>
+                <p class="ms-2">State: {{ lead.state|default:"—" }}</p>
+
+            </div>
+
+            <hr>
+
+            <!-- COURSE INFO -->
+            <h6 class="mb-3">Course Details</h6>
+            <div class="lead-info">
+                <p class="mb-1"><b>Interested Courses:</b></p>
+
+                {% if lead.lead_courses.all %}
+                    <ul class="mb-2">
+                        {% for lc in lead.lead_courses.all %}
+                            <li>
+                                {{ lc.course.course_name }}
+                                <span class="text-muted">
+                                    ({{ lc.department.department_name }})
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No courses selected</p>
+                {% endif %}
+
+                <p><b>Qualification:</b> {{ lead.qualification }}</p>
+                <p><b>College:</b> {{ lead.college_name|default:"—" }}</p>
+                <p><b>Mode:</b> <span class="text-capitalize">{{ lead.mode|default:"—" }}</span></p>
+            </div>
+
+            <hr>
+
+            <!-- MARKETING INFO -->
+            <h6 class="mb-3">Marketing Details</h6>
+            <div class="lead-info">
+                                <p><b>Source:</b> {{ lead.source.source_name|default:"-" }}</p>
+                <p><b>Created Date:</b> {{ lead.enquiry_date }}</p>
+                <p><b>Assigned To:</b> 
+                    {% if lead.assigned %}
+                        {{ lead.assigned.user.get_full_name|default:lead.assigned.user.username }}
+                    {% else %}
+                        <span class="text-muted">Not Assigned</span>
+                    {% endif %}
+
+                </p>
+                <p><b>Campaign:</b> {{ lead.campaign_name|default:"—" }}</p>
+                <p><b>Adset:</b> {{ lead.campaign_adset|default:"—" }}</p>
+                <p><b>Content:</b> {{ lead.campaign_content|default:"—" }}</p>
+            </div>
+
+            <hr>
+
+            <!-- FOLLOWUP INFO -->
+            <h6 class="mb-3">Follow Up</h6>
+            <div class="lead-info">
+                <p><b>Title:</b> {{ lead.followup_title|default:"—" }}</p>
+                <p><b>Date:</b> {{ lead.followup_date|default:"—" }}</p>
+                <p><b>Time:</b> {{ lead.followup_time|default:"—" }}</p>
+            </div>
+
+            <hr>
+
+            <!-- FEEDBACK -->
+            <h6 class="mb-3">Counsellor Notes</h6>
+            <p class="text-muted">
+                {{ lead.feedback|default:"No notes yet" }}
+            </p>
+
+            <a href="{% url 'edit_lead' lead.id %}" class="btn btn-outline-primary mt-3 w-100">
+                Edit Lead
+            </a>
+
+        </div>
+    </div>
+
+
+    <!-- RIGHT HEADER (Activity / Task Tabs) -->
+    <!-- RIGHT SIDE -->
+<div class="col-lg-8">
+    <div class="card shadow-sm border-0 p-4">
+
+        <!-- HEADER -->
+        <div class="activity-header">
+            <div class="activity-tabs">
+                <span class="tab active" id="activityTab" onclick="showActivity()">
+                    <i class="feather-activity me-1"></i> Activity
+                </span>
+
+                <span class="tab" id="taskTab" onclick="showTasks()">
+                    <i class="feather-check-square me-1"></i> Task
+                </span>
+            </div>
+
+        </div>
+
+        <!-- ================= ACTIVITY SECTION ================= -->
+        <!-- ================= ACTIVITY SECTION ================= -->
+<div id="activitySection">
+    <div class="timeline">
+
+    {% if activities %}
+        {% for act in activities %}
+        <div class="timeline-item">
+
+            <div class="timeline-icon">
+                {{ act.user.username|default:"S"|slice:":1"|upper }}
+            </div>
+
+            <div class="timeline-card">
+
+                <div class="timeline-header">
+                    <b>
+                        {% if act.user %}
+                            {{ act.user.username|upper }}
+                        {% else %}
+                            SYSTEM
+                        {% endif %}
+                    </b>
+
+                    {{ act.action }}
+
+                    {# FOLLOWUP BADGE #}
+                    {% if "Follow-up" in act.action %}
+                        {% if act.action == "Completed Follow-up" and act.followup_display_status == 'completed' %}
+                            <span class="badge bg-success ms-2">Completed</span>
+                        {% else %}
+                            <span class="badge bg-warning ms-2">Pending</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <div class="timeline-date">
+                    {{ act.created_at|date:"M d Y h:i A" }}
+                </div>
+
+                <div class="timeline-desc">
+                    {% if act.old_value and act.new_value %}
+                        {{ act.old_value }} →
+                        <span class="new-val">{{ act.new_value }}</span>
+
+                    {% elif act.new_value %}
+                        <span class="new-val">{{ act.new_value }}</span>
+
+                    {% else %}
+                        <span class="text-muted">Details updated</span>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No activities yet</p>
+    {% endif %}
+
+    </div>
+</div>
+
+
+        <!-- ================= TASK SECTION ================= -->
+        <div id="taskSection" style="display:none;">
+            <div class="timeline">
+                <div class="mb-3">
+                    <h6 class="mb-2">Follow-ups</h6>
+                </div>
+
+                {% for followup in followups %}
+                <div class="timeline-item">
+
+                    <div class="timeline-icon">
+                        F
+                    </div>
+
+                    <div class="timeline-card">
+                        <div class="timeline-header">
+                            <b>{{ followup.title }}</b>
+                            {% if followup.status == 'completed' %}
+                                <span class="badge bg-success ms-2">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning ms-2">Pending</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="timeline-date">
+                            {{ followup.followup_date }} {% if followup.followup_time %}{{ followup.followup_time|time:"h:i A" }}{% endif %}
+                        </div>
+
+                        <div class="timeline-desc">
+                            Assigned to:
+                            {% if followup.assigned_to %}
+                                {{ followup.assigned_to.user.get_full_name|default:followup.assigned_to.user.username }}
+                            {% else %}
+                                <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                            <br>
+                            {{ followup.notes|default:"No notes added" }}
+                        </div>
+                    </div>
+
+                </div>
+                {% empty %}
+                    <p class="text-muted">No follow-ups yet</p>
+                {% endfor %}
+
+            </div>
+        </div>
+
+    </div>
+</div>
+<!-- ADD TASK MODAL -->
+<div id="taskModal" class="task-modal">
+    <div class="task-modal-content">
+
+        <span class="close" onclick="closeTaskModal()">×</span>
+        <h4>Add Task</h4>
+
+        <form method="POST" action="{% url 'add_task' lead.id %}">
+            {% csrf_token %}
+
+            <label>Task Name *</label>
+            <input type="text" name="task_name" required>
+
+            <label>Category *</label>
+            <select name="category" required>
+                <option value="">Select Category</option>
+                <option value="call">Call</option>
+                <option value="message">Message</option>
+                <option value="meeting">Meeting</option>
+            </select>
+
+            <label>Date *</label>
+            <input type="date" name="date" required>
+
+            <label>Time *</label>
+            <input type="time" name="time" required>
+
+            <label>Assigned To *</label>
+         <select name="assigned_to" required>
+            <option value="">Select CRE</option>
+            {% for profile in users %}
+                <option value="{{ profile.id }}">
+                    {{ profile.user.get_full_name|default:profile.user.username }}
+                </option>
+            {% endfor %}
+        </select>
+
+
+            <label>Description *</label>
+            <textarea name="description" required></textarea>
+
+            <button type="submit" class="btn btn-danger w-100 mt-3">
+                Save Task
+            </button>
+        </form>
+
+    </div>
+</div>
+
+
+<script>
+function showTasks(){
+    document.getElementById("taskSection").style.display="block";
+    document.getElementById("activitySection").style.display="none";
+
+    document.getElementById("taskTab").classList.add("active");
+    document.getElementById("activityTab").classList.remove("active");
+}
+
+function showActivity(){
+    document.getElementById("taskSection").style.display="none";
+    document.getElementById("activitySection").style.display="block";
+
+    document.getElementById("activityTab").classList.add("active");
+    document.getElementById("taskTab").classList.remove("active");
+}
+
+function openTaskModal(){
+    document.getElementById("taskModal").style.display="block";
+}
+function closeTaskModal(){
+    document.getElementById("taskModal").style.display="none";
+}
+</script>
+
+
+{% endblock %}

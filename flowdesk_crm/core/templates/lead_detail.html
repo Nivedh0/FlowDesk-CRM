@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}Lead Detail{% endblock %}
+
+{% block content %}
+
+<style>
+.section-box{background:#fff;border-radius:10px;padding:20px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.08);border-left:3px solid #667eea;}
+.section-title{font-size:1rem;font-weight:700;color:#1e293b;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #f1f5f9;}
+.info-row{display:flex;padding:10px 0;border-bottom:1px solid #f8fafc;}
+.info-row:last-child{border-bottom:none;}
+.info-label{flex:0 0 180px;font-weight:600;color:#64748b;font-size:0.9rem;}
+.info-value{flex:1;color:#1e293b;font-size:0.9rem;}
+.status-enrolled{background:#d1fae5;color:#059669;padding:6px 14px;border-radius:20px;font-weight:600;font-size:0.85rem;}
+.status-not-enrolled{background:#fee2e2;color:#dc2626;padding:6px 14px;border-radius:20px;font-weight:600;font-size:0.85rem;}
+.btn{border-radius:10px;padding:10px 20px;font-size:14px;}
+.btn-sm{padding:6px 12px;font-size:13px;}
+</style>
+
+<div class="main-content">
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1">{{ lead.full_name }}</h4>
+        <span class="text-muted">Lead Information</span>
+    </div>
+
+    <!-- Basic Details -->
+    <div class="section-box">
+        <h6 class="section-title">Basic Details</h6>
+        <div class="info-row">
+            <div class="info-label">Name</div>
+            <div class="info-value">{{ lead.full_name }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Email</div>
+            <div class="info-value"><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Mobile</div>
+            <div class="info-value">{{ lead.mobile }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">WhatsApp</div>
+            <div class="info-value">{{ lead.whatsapp|default:"—" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Status</div>
+            <div class="info-value">
+                <span class="{% if lead.status.status_name|lower == 'enrolled' %}status-enrolled{% else %}status-not-enrolled{% endif %}">
+                    {{ lead.status.status_name }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Academic Details -->
+    <div class="section-box">
+        <h6 class="section-title">Academic Details</h6>
+        <div class="info-row">
+            <div class="info-label">Qualification</div>
+            <div class="info-value">{{ lead.qualification }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">College Name</div>
+            <div class="info-value">{{ lead.college_name|default:"—" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Interested Courses</div>
+            <div class="info-value">
+                {% if lead.lead_courses.all %}
+                    {% for lc in lead.lead_courses.all %}
+                        <div><strong>{{ lc.course.course_name }}</strong> <span class="text-muted">({{ lc.department.department_name }})</span></div>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Mode</div>
+            <div class="info-value text-capitalize">{{ lead.mode|default:"—" }}</div>
+        </div>
+    </div>
+
+    <!-- Lead Details -->
+    <div class="section-box">
+        <h6 class="section-title">Lead Details</h6>
+        <div class="info-row">
+            <div class="info-label">Source</div>
+                    <div class="info-value text-uppercase">{{ lead.source.source_name|default:"-" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Enquiry Date</div>
+            <div class="info-value">{{ lead.enquiry_date|date:"d M, Y" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Assigned To</div>
+            <div class="info-value">
+                {% if lead.assigned and lead.assigned.user %}
+                    {{ lead.assigned.user.get_full_name|default:lead.assigned.user.username }}
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Created By</div>
+            <div class="info-value">
+                {% if lead.created_by %}
+                    {{ lead.created_by.get_full_name|default:lead.created_by.username }}
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Follow Up -->
+    <div class="section-box">
+        <h6 class="section-title">Follow Up</h6>
+        <div class="info-row">
+            <div class="info-label">Title</div>
+            <div class="info-value">{{ lead.followup_title|default:"—" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Date</div>
+            <div class="info-value">{{ lead.followup_date|date:"d M, Y"|default:"—" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Time</div>
+            <div class="info-value">{{ lead.followup_time|default:"—" }}</div>
+        </div>
+    </div>
+
+    <!-- Campaign Details -->
+    <div class="section-box">
+        <h6 class="section-title">Campaign Details</h6>
+        <div class="info-row">
+            <div class="info-label">Campaign Name</div>
+            <div class="info-value">{{ lead.campaign_name|default:"—" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Campaign Adset</div>
+            <div class="info-value">{{ lead.campaign_adset|default:"—" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Campaign Content</div>
+            <div class="info-value">{{ lead.campaign_content|default:"—" }}</div>
+        </div>
+    </div>
+
+    <!-- Location & Other Info -->
+    <div class="section-box">
+        <h6 class="section-title">Location & Other Information</h6>
+        <div class="info-row">
+            <div class="info-label">Location</div>
+            <div class="info-value">{{ lead.location }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Address</div>
+            <div class="info-value">
+                <div><strong>House:</strong> {{ lead.house_name|default:"—" }}</div>
+                <div><strong>Place:</strong> {{ lead.place|default:"—" }}</div>
+                <div><strong>District:</strong> {{ lead.district|default:"—" }}</div>
+                <div><strong>State:</strong> {{ lead.state|default:"—" }}</div>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Feedback</div>
+            <div class="info-value">{{ lead.feedback|default:"—" }}</div>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-light" onclick="window.history.back();">← Back</button>
+</div>
+
+{% endblock %}

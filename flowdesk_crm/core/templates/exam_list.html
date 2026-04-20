@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Exams</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Exams</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#examFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">Create Exam</h5>
+                            <p class="text-muted mb-0 fs-13">Add a new exam for a batch</p>
+                        </div>
+                    </div>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Batch <span class="text-danger">*</span></label>
+                                <select name="batch" class="form-select" required>
+                                    <option value="">Select Batch</option>
+                                    {% for batch in batches %}
+                                    <option value="{{ batch.id }}">{{ batch.batch_name }} - {{ batch.course.course_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Exam Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g., Monthly Test 1" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Exam Date <span class="text-danger">*</span></label>
+                                <input type="date" name="exam_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Max Marks</label>
+                                <input type="number" name="max_marks" class="form-control" min="1" value="100">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-plus me-2"></i>Create Exam
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">Exam List</h5>
+                            <p class="text-muted mb-0 fs-13">View and manage all exams</p>
+                        </div>
+                    </div>
+
+                    <div class="collapse border-top px-0 pt-3 pb-1 mb-3" id="examFilterPanel">
+                    <form method="GET" class="mb-0">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Batch</label>
+                                <select name="batch" class="form-select">
+                                    <option value="">All Batches</option>
+                                    {% for batch in batches %}
+                                    <option value="{{ batch.id }}" {% if request.GET.batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ batch.batch_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label d-block">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="feather-filter me-2"></i>Filter
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label d-block">&nbsp;</label>
+                                <a href="{% url 'exam_list' %}" class="btn btn-outline-secondary w-100">Clear</a>
+                            </div>
+                        </div>
+                    </form>
+                    </div>
+
+                    <form method="GET" class="d-flex align-items-center gap-2 mb-3">
+                        {% for key, value in request.GET.items %}
+                            {% if key != 'per_page' and key != 'page' %}
+                                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endif %}
+                        {% endfor %}
+
+                        <label class="fw-semibold mb-0">Show</label>
+
+                        <select name="per_page"
+                                class="form-control"
+                                style="width:90px;"
+                                onchange="this.form.submit()">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        </select>
+
+                        <span class="fw-semibold">entries</span>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle exam-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="exam-col-index">#</th>
+                                    <th class="exam-col-title">Exam Title</th>
+                                    <th class="exam-col-batch">Batch</th>
+                                    <th class="exam-col-date text-center">Date</th>
+                                    <th class="exam-col-marks text-center">Marks</th>
+                                    <th class="exam-col-actions text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exam in exams %}
+                                <tr>
+                                    <td class="text-muted">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                                    <td class="fw-semibold">{{ exam.title }}</td>
+                                    <td>
+                                        <span class="badge bg-soft-primary text-primary">{{ exam.batch.batch_name }}</span>
+                                    </td>
+                                    <td class="text-center text-nowrap">{{ exam.exam_date|date:"d M, Y" }}</td>
+                                    <td class="text-center"><span class="badge bg-info exam-mark-badge">{{ exam.max_marks }}</span></td>
+                                    <td class="text-end">
+                                        <div class="exam-actions" role="group">
+                                            <a href="{% url 'exam_detail' exam.id %}" class="action-circle" title="View Details">
+                                                <i class="feather-eye"></i>
+                                            </a>
+                                            <a href="{% url 'question_paper' exam.id %}" class="action-circle" title="Question Paper">
+                                                <i class="feather-file-text"></i>
+                                            </a>
+                                            {% if request.user.userprofile.role == 'admin' %}
+                                            <form method="post" action="{% url 'delete_exam' exam.id %}" class="d-inline-block m-0">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="action-circle action-circle-danger"
+                                                        title="Delete Exam"
+                                                        onclick="return confirm('Delete this exam?');">
+                                                    <i class="feather-trash-2"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="feather-inbox fs-1 text-muted mb-3 d-block"></i>
+                                        <p class="text-muted mb-0">No exams found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if page_obj.paginator.num_pages > 1 %}
+                        <div class="pagination-row">
+
+                            <!-- PAGINATOR -->
+                            <nav class="pagination-glass">
+                                <ul class="pagination pagination-modern mb-0">
+
+                                    <!-- PREVIOUS -->
+                                   {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                        href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                            ‹ Previous
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">‹ Previous</span>
+                                    </li>
+                                    {% endif %}
+
+                                    <!-- PAGE NUMBERS -->
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                            <a class="page-link"
+                                            href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                                                {{ num }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                   <!-- NEXT -->
+                                    {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                        href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                            Next ›
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next ›</span>
+                                    </li>
+                                    {% endif %}
+                                    </li>
+
+                                </ul>
+                            </nav>
+
+                            <!-- INFO TEXT -->
+                            <div class="pagination-info">
+                                Showing
+                                <strong>{{ page_obj.start_index }}</strong>
+                                –
+                                <strong>{{ page_obj.end_index }}</strong>
+                                of
+                                <strong>{{ paginator.count }}</strong>
+                                exams
+                            </div>
+
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+
+/* ================= PAGINATION ================= */
+
+.pagination-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 24px 0;
+}
+
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    border-radius: 10px;
+}
+
+.form-select, .form-control {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.exam-table th,
+.exam-table td {
+    vertical-align: middle;
+}
+
+.exam-col-index {
+    width: 70px;
+}
+
+.exam-col-title {
+    min-width: 220px;
+}
+
+.exam-col-batch {
+    min-width: 170px;
+}
+
+.exam-col-date {
+    width: 150px;
+}
+
+.exam-col-marks {
+    width: 100px;
+}
+
+.exam-col-actions {
+    min-width: 270px;
+}
+
+.exam-mark-badge {
+    min-width: 56px;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.exam-actions {
+    display: inline-flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.action-circle:hover {
+    background: #f8fafc;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+}
+
+.action-circle-danger {
+    color: #dc2626;
+}
+
+.action-circle-danger:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.bg-soft-primary {
+    background-color: rgba(79,70,229,0.1);
+}
+</style>
+{% endblock %}

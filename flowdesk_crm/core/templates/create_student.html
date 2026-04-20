@@ -1,0 +1,658 @@
+{% extends 'base.html' %}
+{% block title %}Add Student{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Create Student</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'students' %}">Students</a></li>
+            <li class="breadcrumb-item">Create</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <form method="POST" id="addStudentForm">
+                    {% csrf_token %}
+
+                    <!-- Basic Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Student Info :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Basic information for the student</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="studentNameInput" class="fw-semibold">Student Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user"></i></div>
+                                    <input type="text" name="student_name" class="form-control{% if field_errors.student_name %} is-invalid{% endif %}" id="studentNameInput" placeholder="Student Name" value="{{ form_data.student_name|default:'' }}" maxlength="50" required>
+                                </div>
+                                {% if field_errors.student_name %}
+                                <div class="field-error">{{ field_errors.student_name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="emailInput" class="fw-semibold">Email: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-mail"></i></div>
+                                    <input type="email" name="email" class="form-control{% if field_errors.email %} is-invalid{% endif %}" id="emailInput" placeholder="Email" value="{{ form_data.email|default:'' }}" maxlength="254">
+                                </div>
+                                {% if field_errors.email %}
+                                <div class="field-error">{{ field_errors.email }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="mobileInput" class="fw-semibold">Mobile: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-phone"></i></div>
+                                    <input type="text" name="mobile" class="form-control{% if field_errors.mobile %} is-invalid{% endif %}" id="mobileInput" placeholder="Mobile" value="{{ form_data.mobile|default:'' }}" inputmode="tel" autocomplete="tel" maxlength="16" required>
+                                </div>
+                                {% if field_errors.mobile %}
+                                <div class="field-error">{{ field_errors.mobile }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Status: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <input type="hidden" name="status" value="enrolled">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-check-circle"></i></div>
+                                    <input type="text" class="form-control" value="Enrolled" readonly>
+                                </div>
+                                <div class="text-muted mt-2 fs-12">Students created from this page are always enrolled.</div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Created By: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user-check"></i></div>
+                                    <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Courses Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Courses :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select departments and courses for the student</span>
+                            </h5>
+                        </div>
+                        {% if field_errors.courses %}
+                        <div class="field-error mb-3">{{ field_errors.courses }}</div>
+                        {% endif %}
+                        <div id="courseContainer">
+                            {% for row in course_rows %}
+                            <div class="course-row mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="form-label">Department</label>
+                                        <select name="departments[]" class="form-control dept-select{% if row.department_error %} is-invalid{% endif %}" required onchange="filterCoursesForRow(this)">
+                                            <option value="">Select Department</option>
+                                            {% for dept in departments %}
+                                            <option value="{{ dept.id }}" {% if row.department_id == dept.id|stringformat:'s' %}selected{% endif %}>{{ dept.department_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if row.department_error %}
+                                        <div class="field-error">{{ row.department_error }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-lg-5 mb-2">
+                                        <label class="form-label">Course</label>
+                                        <select name="courses[]" class="form-control course-select{% if row.course_error %} is-invalid{% endif %}" required {% if not row.department_id %}disabled{% endif %}>
+                                            <option value="">Select Department First</option>
+                                            {% for course in courses %}
+                                            <option value="{{ course.id }}" data-department="{{ course.department.id }}" {% if row.course_id == course.id|stringformat:'s' %}selected{% endif %}>{{ course.course_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% if row.course_error %}
+                                        <div class="field-error">{{ row.course_error }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-lg-2 mb-2">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeCourseRow(this)" {% if forloop.first %}style="display:none;"{% endif %}>Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addCourseRow()">
+                            <i class="feather-plus"></i> Add Another Course
+                        </button>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Address Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Address :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Student address information</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="houseNameInput" class="fw-semibold">House Name: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-home"></i></div>
+                                    <input type="text" name="house_name" class="form-control{% if field_errors.house_name %} is-invalid{% endif %}" id="houseNameInput" placeholder="House Name" value="{{ form_data.house_name|default:'' }}" maxlength="150">
+                                </div>
+                                {% if field_errors.house_name %}
+                                <div class="field-error">{{ field_errors.house_name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="placeInput" class="fw-semibold">Place: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-map"></i></div>
+                                    <input type="text" name="place" class="form-control{% if field_errors.place %} is-invalid{% endif %}" id="placeInput" placeholder="Place" value="{{ form_data.place|default:'' }}" maxlength="150">
+                                </div>
+                                {% if field_errors.place %}
+                                <div class="field-error">{{ field_errors.place }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="districtInput" class="fw-semibold">District: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-map-pin"></i></div>
+                                    <input type="text" name="district" class="form-control{% if field_errors.district %} is-invalid{% endif %}" id="districtInput" placeholder="District" value="{{ form_data.district|default:'' }}" maxlength="150">
+                                </div>
+                                {% if field_errors.district %}
+                                <div class="field-error">{{ field_errors.district }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="stateInput" class="fw-semibold">State: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-globe"></i></div>
+                                    <input type="text" name="state" class="form-control{% if field_errors.state %} is-invalid{% endif %}" id="stateInput" placeholder="State" value="{{ form_data.state|default:'' }}" maxlength="150">
+                                </div>
+                                {% if field_errors.state %}
+                                <div class="field-error">{{ field_errors.state }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="locationInput" class="fw-semibold">Location: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-navigation"></i></div>
+                                    <input type="text" name="location" class="form-control{% if field_errors.location %} is-invalid{% endif %}" id="locationInput" placeholder="Location" value="{{ form_data.location|default:'' }}" maxlength="100">
+                                </div>
+                                {% if field_errors.location %}
+                                <div class="field-error">{{ field_errors.location }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Action Buttons -->
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'students' %}" class="btn btn-outline-secondary">
+                                <i class="feather-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="button" class="btn btn-primary" id="openConfirmAddStudentModal">
+                                <i class="feather-user-plus me-1"></i> Add Student
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmAddStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Confirm Add Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="feather-user-plus" style="font-size:36px;color:#4f46e5;"></i>
+                <p class="mt-3 mb-0">Are you sure you want to add this student?</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="addStudentForm">Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function normalizePhoneNumber(value) {
+    const trimmed = (value || '').trim();
+    let cleaned = trimmed.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) {
+        cleaned = '+' + cleaned.slice(1).replace(/\+/g, '');
+    } else {
+        cleaned = cleaned.replace(/\+/g, '');
+    }
+    return cleaned;
+}
+
+function sanitizePhoneInput(input) {
+    const normalizedValue = normalizePhoneNumber(input.value);
+    if (input.value !== normalizedValue) {
+        input.value = normalizedValue;
+    }
+}
+
+function isAllowedPhoneKey(event) {
+    const allowedKeys = [
+        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+        'Home', 'End'
+    ];
+
+    if (allowedKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
+        return true;
+    }
+
+    if (/^\d$/.test(event.key)) {
+        return true;
+    }
+
+    if (event.key === '+') {
+        const input = event.target;
+        return input.selectionStart === 0 && !input.value.includes('+');
+    }
+
+    return false;
+}
+
+function resetCourseSelectOptions(courseSelect, deptId) {
+    let hasVisibleCourse = false;
+
+    Array.from(courseSelect.options).forEach((option, index) => {
+        if (index === 0) {
+            option.textContent = deptId ? 'Select Course' : 'Select Department First';
+            option.hidden = false;
+            return;
+        }
+
+        const matchesDepartment = option.dataset.department === deptId;
+        option.hidden = !matchesDepartment;
+        option.disabled = !matchesDepartment;
+        if (matchesDepartment) {
+            hasVisibleCourse = true;
+        }
+    });
+
+    return hasVisibleCourse;
+}
+
+function getSelectedCourses() {
+    const selectedCourses = [];
+
+    document.querySelectorAll('#courseContainer .course-select').forEach(select => {
+        if (select.value) {
+            selectedCourses.push(select.value);
+        }
+    });
+
+    return selectedCourses;
+}
+
+function updateAllCourseSelects() {
+    const selectedCourses = getSelectedCourses();
+
+    document.querySelectorAll('#courseContainer .course-row').forEach(row => {
+        const deptSelect = row.querySelector('.dept-select');
+        const courseSelect = row.querySelector('.course-select');
+        const currentValue = courseSelect.value;
+        const deptId = deptSelect.value;
+
+        Array.from(courseSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                option.disabled = false;
+                return;
+            }
+
+            const matchesDepartment = option.dataset.department === deptId;
+            const isSelectedElsewhere = selectedCourses.includes(option.value) && option.value !== currentValue;
+
+            option.hidden = !matchesDepartment || isSelectedElsewhere;
+            option.disabled = !matchesDepartment || isSelectedElsewhere;
+        });
+    });
+}
+
+function filterCoursesForRow(deptSelect, preserveCourse = false) {
+    const row = deptSelect.closest('.course-row');
+    const courseSelect = row.querySelector('.course-select');
+    const deptId = deptSelect.value;
+    const existingCourseValue = courseSelect.value;
+
+    courseSelect.disabled = !deptId;
+    resetCourseSelectOptions(courseSelect, deptId);
+
+    if (!deptId) {
+        courseSelect.value = '';
+        updateAllCourseSelects();
+        return;
+    }
+
+    const selectedOption = Array.from(courseSelect.options).find(
+        option => option.value === existingCourseValue && option.dataset.department === deptId
+    );
+
+    courseSelect.value = preserveCourse && selectedOption ? existingCourseValue : '';
+    updateAllCourseSelects();
+}
+
+function trimFormInputs() {
+    const textInputs = document.querySelectorAll(
+        '#addStudentForm input[type="text"], #addStudentForm input[type="email"]'
+    );
+
+    textInputs.forEach(input => {
+        if (input.hasAttribute('readonly')) return;
+        input.value = input.value.trim();
+    });
+
+    const studentNameInput = document.getElementById('studentNameInput');
+    if (studentNameInput.value) {
+        studentNameInput.value = studentNameInput.value.replace(/\s+/g, ' ');
+    }
+
+    const mobileInput = document.getElementById('mobileInput');
+    mobileInput.value = normalizePhoneNumber(mobileInput.value);
+}
+
+function clearClientValidation() {
+    document.querySelectorAll('#addStudentForm input, #addStudentForm select').forEach(element => {
+        element.setCustomValidity('');
+    });
+}
+
+function validateCourseRows() {
+    const rows = document.querySelectorAll('#courseContainer .course-row');
+    const selectedCourses = new Set();
+    let hasValidCoursePair = false;
+
+    rows.forEach(row => {
+        const deptSelect = row.querySelector('.dept-select');
+        const courseSelect = row.querySelector('.course-select');
+        const deptId = deptSelect.value.trim();
+        const courseId = courseSelect.value.trim();
+
+        if (!deptId && !courseId) {
+            return;
+        }
+
+        if (!deptId) {
+            deptSelect.setCustomValidity('Department is required.');
+            return;
+        }
+
+        if (!courseId) {
+            courseSelect.setCustomValidity('Course is required.');
+            return;
+        }
+
+        const selectedCourseOption = courseSelect.options[courseSelect.selectedIndex];
+        if (!selectedCourseOption || selectedCourseOption.dataset.department !== deptId) {
+            courseSelect.setCustomValidity('Selected course does not belong to the chosen department.');
+            return;
+        }
+
+        if (selectedCourses.has(courseId)) {
+            courseSelect.setCustomValidity('This course is already selected.');
+            return;
+        }
+
+        selectedCourses.add(courseId);
+        hasValidCoursePair = true;
+    });
+
+    if (!hasValidCoursePair && rows.length) {
+        const firstDepartment = rows[0].querySelector('.dept-select');
+        firstDepartment.setCustomValidity('Select at least one department and course.');
+    }
+
+    return hasValidCoursePair;
+}
+
+function validateStudentForm() {
+    trimFormInputs();
+    clearClientValidation();
+
+    const studentNameInput = document.getElementById('studentNameInput');
+    const emailInput = document.getElementById('emailInput');
+    const mobileInput = document.getElementById('mobileInput');
+    const houseNameInput = document.getElementById('houseNameInput');
+    const placeInput = document.getElementById('placeInput');
+    const districtInput = document.getElementById('districtInput');
+    const stateInput = document.getElementById('stateInput');
+    const locationInput = document.getElementById('locationInput');
+
+    const namePattern = /^[A-Za-z][A-Za-z .'-]*$/;
+    const mobilePattern = /^\+?\d{10,15}$/;
+    const maxLengthRules = [
+        [houseNameInput, 150, 'House Name'],
+        [placeInput, 150, 'Place'],
+        [districtInput, 150, 'District'],
+        [stateInput, 150, 'State'],
+        [locationInput, 100, 'Location']
+    ];
+
+    if (!studentNameInput.value) {
+        studentNameInput.setCustomValidity('Student name is required.');
+    } else if (studentNameInput.value.length < 2) {
+        studentNameInput.setCustomValidity('Student name must be at least 2 characters.');
+    } else if (!namePattern.test(studentNameInput.value)) {
+        studentNameInput.setCustomValidity('Student name contains invalid characters.');
+    }
+
+    if (emailInput.value && !emailInput.checkValidity()) {
+        emailInput.setCustomValidity('Enter a valid email address.');
+    }
+
+    if (!mobileInput.value) {
+        mobileInput.setCustomValidity('Mobile number is required.');
+    } else if (!mobilePattern.test(mobileInput.value)) {
+        mobileInput.setCustomValidity('Enter a valid mobile number (10 to 15 digits, optional +).');
+    }
+
+    maxLengthRules.forEach(([input, maxLength, label]) => {
+        if (input.value && input.value.length > maxLength) {
+            input.setCustomValidity(`${label} must be ${maxLength} characters or fewer.`);
+        }
+    });
+
+    validateCourseRows();
+
+    return document.getElementById('addStudentForm').checkValidity();
+}
+
+function addCourseRow() {
+    const container = document.getElementById('courseContainer');
+    const firstRow = container.querySelector('.course-row');
+    const newRow = firstRow.cloneNode(true);
+
+    newRow.querySelectorAll('select').forEach(select => {
+        select.value = '';
+        select.disabled = select.classList.contains('course-select');
+        select.classList.remove('is-invalid');
+        select.setCustomValidity('');
+    });
+
+    newRow.querySelectorAll('.field-error').forEach(error => error.remove());
+    newRow.querySelector('.btn-outline-danger').style.display = 'block';
+
+    container.appendChild(newRow);
+    filterCoursesForRow(newRow.querySelector('.dept-select'));
+    updateAllCourseSelects();
+}
+
+function removeCourseRow(btn) {
+    const container = document.getElementById('courseContainer');
+    if (container.querySelectorAll('.course-row').length === 1) {
+        return;
+    }
+    btn.closest('.course-row').remove();
+    updateAllCourseSelects();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('addStudentForm');
+    const openModalButton = document.getElementById('openConfirmAddStudentModal');
+    const confirmModalElement = document.getElementById('confirmAddStudentModal');
+    const mobileInput = document.getElementById('mobileInput');
+
+    document.querySelectorAll('.dept-select').forEach(select => {
+        filterCoursesForRow(select, true);
+        select.addEventListener('change', () => {
+            clearClientValidation();
+        });
+    });
+
+    document.addEventListener('change', function (event) {
+        if (event.target.classList.contains('course-select')) {
+            clearClientValidation();
+            updateAllCourseSelects();
+        }
+    });
+
+    document.querySelectorAll('#addStudentForm input, #addStudentForm select').forEach(element => {
+        const eventName = element.tagName === 'SELECT' ? 'change' : 'input';
+        element.addEventListener(eventName, function () {
+            this.setCustomValidity('');
+        });
+    });
+
+    mobileInput.addEventListener('keydown', function (event) {
+        if (!isAllowedPhoneKey(event)) {
+            event.preventDefault();
+        }
+    });
+
+    mobileInput.addEventListener('input', function () {
+        sanitizePhoneInput(this);
+        this.setCustomValidity('');
+    });
+
+    sanitizePhoneInput(mobileInput);
+    updateAllCourseSelects();
+
+    openModalButton.addEventListener('click', function () {
+        if (!validateStudentForm()) {
+            form.reportValidity();
+            return;
+        }
+
+        bootstrap.Modal.getOrCreateInstance(confirmModalElement).show();
+    });
+
+    form.addEventListener('submit', function (event) {
+        if (!validateStudentForm()) {
+            event.preventDefault();
+            const modalInstance = bootstrap.Modal.getInstance(confirmModalElement);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+            form.reportValidity();
+        }
+    });
+});
+</script>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.field-error {
+    margin-top: 0.35rem;
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-backdrop.show {
+    opacity: 0.6;
+}
+</style>
+
+{% endblock %}

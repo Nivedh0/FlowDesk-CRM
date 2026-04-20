@@ -1,0 +1,3011 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+
+
+{% block content %}
+<style>
+.dashboard-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--card-gradient-start), var(--card-gradient-end));
+}
+
+.dashboard-card.card-primary { --card-gradient-start: #667eea; --card-gradient-end: #764ba2; }
+.dashboard-card.card-success { --card-gradient-start: #11998e; --card-gradient-end: #38ef7d; }
+.dashboard-card.card-info { --card-gradient-start: #3b82f6; --card-gradient-end: #06b6d4; }
+.dashboard-card.card-danger { --card-gradient-start: #f093fb; --card-gradient-end: #f5576c; }
+
+.card-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon-wrapper::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+    top: 0;
+    left: 0;
+}
+
+.card-icon-wrapper i {
+    font-size: 20px;
+    z-index: 1;
+}
+
+.card-metric {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+}
+
+.card-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+}
+
+.card-progress-wrapper {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.progress-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.progress-value {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.custom-progress {
+    height: 6px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.custom-progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--progress-start), var(--progress-end));
+    position: relative;
+    transition: width 1s ease-in-out;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.custom-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.3) 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-primary { --progress-start: #667eea; --progress-end: #764ba2; }
+.progress-success { --progress-start: #11998e; --progress-end: #38ef7d; }
+.progress-warning { --progress-start: #f093fb; --progress-end: #f5576c; }
+.progress-info { --progress-start: #3b82f6; --progress-end: #06b6d4; }
+
+.card-menu-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #94a3b8;
+}
+
+.card-menu-btn:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.dashboard-header {
+    margin-bottom: 24px;
+    padding: 16px 0;
+}
+
+.lead-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.lead-filter-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 190px;
+}
+
+.lead-filter-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.lead-filter-period {
+    font-size: 0.92rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.lead-range-options {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lead-range-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid #dbe3ef;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lead-range-pill:hover {
+    border-color: #667eea;
+    color: #4338ca;
+}
+
+.lead-range-pill input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lead-range-pill.is-active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.14) 0%, rgba(118, 75, 162, 0.16) 100%);
+    border-color: rgba(102, 126, 234, 0.45);
+    color: #4338ca;
+    box-shadow: 0 8px 18px rgba(102, 126, 234, 0.14);
+}
+
+.lead-custom-range {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lead-date-input {
+    min-width: 170px;
+}
+
+.lead-filter-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dashboard-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.cre-followup-panel {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 30%),
+        linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.cre-followup-panel .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cre-followup-toolbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(360px, 1.3fr);
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+.cre-followup-intro {
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+}
+
+.cre-followup-intro-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.cre-followup-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: rgba(14, 165, 233, 0.12);
+    color: #0369a1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cre-followup-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.cre-followup-kpi {
+    padding: 10px 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.cre-followup-kpi .kpi-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.cre-followup-kpi .kpi-value {
+    display: block;
+    color: #0f172a;
+    font-size: 0.94rem;
+    font-weight: 700;
+}
+
+.cre-followup-date {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 100%;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.cre-filter-label {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.cre-range-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cre-range-button {
+    border: 1px solid #d7e0ea;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.cre-range-button:hover {
+    border-color: #0ea5e9;
+    background: #eff6ff;
+    color: #0f172a;
+}
+
+.cre-custom-range {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.cre-custom-range-title {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+.cre-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 150px;
+    flex: 1 1 150px;
+}
+
+.cre-action-wrap {
+    display: flex;
+    align-items: flex-end;
+    flex: 0 0 auto;
+}
+
+.cre-input-group label {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.cre-date-input {
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid #dbe3ec;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 600;
+    padding: 0 14px;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.cre-date-input:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+}
+
+.cre-apply-btn {
+    height: 42px;
+    border-radius: 12px;
+    padding: 0 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
+.cre-range-button.is-active {
+    border-color: #0f172a;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
+.cre-followup-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+.cre-stat-chip {
+    position: relative;
+    padding: 14px 16px 14px 18px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.cre-stat-chip::before {
+    content: "";
+    position: absolute;
+    top: 12px;
+    left: 10px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0ea5e9 0%, #2563eb 100%);
+}
+
+.cre-stat-chip .label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+.cre-stat-chip .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.cre-followup-table-wrap {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.96);
+    margin-top: 2px;
+}
+
+.cre-followup-table {
+    margin-bottom: 0;
+}
+
+.cre-followup-table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    border-bottom: 1px solid #e2e8f0;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.cre-followup-table tbody td {
+    vertical-align: middle;
+    border-color: #eef2f7;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.cre-followup-table tbody tr:hover {
+    background: rgba(248, 250, 252, 0.85);
+}
+
+.cre-name-block {
+    margin-bottom: 8px;
+}
+
+.cre-name {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cre-subtext {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.cre-progress-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.cre-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+}
+
+.cre-progress-meta {
+    margin-top: 6px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.status-pill.total {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.status-pill.pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.status-pill.completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-pill.cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.cre-followup-action {
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.trainer-hero {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 20px;
+    padding: 24px;
+    background:
+        radial-gradient(circle at top left, rgba(16, 185, 129, 0.16), transparent 30%),
+        linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%);
+    color: #fff;
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.18);
+}
+
+.trainer-hero-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.trainer-hero-subtitle {
+    color: rgba(226, 232, 240, 0.82);
+    margin-bottom: 0;
+    max-width: 720px;
+}
+
+.trainer-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.trainer-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.trainer-action-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.trainer-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+}
+
+.trainer-stat-card {
+    padding: 20px;
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.trainer-stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.trainer-stat-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.trainer-stat-value {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.trainer-stat-note {
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+.trainer-icon-badge {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.trainer-grid-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.trainer-grid-card .card-body {
+    padding: 22px;
+}
+
+.trainer-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.trainer-section-subtitle {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin-bottom: 0;
+}
+
+.trainer-batch-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.trainer-batch-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    padding: 18px;
+}
+
+.trainer-batch-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.trainer-batch-meta {
+    font-size: 0.84rem;
+    color: #64748b;
+    margin-bottom: 14px;
+}
+
+.trainer-batch-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.trainer-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+    color: #334155;
+    font-weight: 600;
+}
+
+.trainer-mini-progress {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 10px 0 8px;
+}
+
+.trainer-mini-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #0ea5e9 0%, #22c55e 100%);
+    border-radius: 999px;
+}
+
+.trainer-card-link {
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.trainer-card-link:hover {
+    color: #0369a1;
+}
+
+.trainer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.trainer-list-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 15px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.trainer-list-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.trainer-list-meta {
+    font-size: 0.84rem;
+    color: #64748b;
+}
+
+.trainer-list-date {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0369a1;
+    white-space: nowrap;
+}
+
+.trainer-empty {
+    padding: 24px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    text-align: center;
+    color: #64748b;
+    background: rgba(248, 250, 252, 0.8);
+}
+
+
+@media (max-width: 768px) {
+    .card-metric { font-size: 1.5rem; }
+    .card-icon-wrapper { width: 40px; height: 40px; }
+    .card-icon-wrapper i { font-size: 18px; }
+    .lead-filter-row {
+        align-items: stretch;
+    }
+    .lead-filter-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+    .lead-filter-actions .btn {
+        width: 100%;
+    }
+    .cre-followup-toolbar {
+        grid-template-columns: 1fr;
+    }
+    .cre-followup-toolbar {
+        align-items: stretch;
+    }
+    .cre-followup-kpis {
+        grid-template-columns: 1fr;
+    }
+    .cre-followup-date {
+        width: 100%;
+    }
+    .cre-input-group,
+    .cre-action-wrap,
+    .cre-apply-btn,
+    .cre-followup-action {
+        width: 100%;
+    }
+    .cre-action-wrap {
+        align-items: stretch;
+    }
+    .cre-range-buttons {
+        gap: 8px;
+    }
+}
+
+/* Dark mode fixes */
+html.app-skin-dark .dashboard-card {
+    background: linear-gradient(135deg, var(--fd-dark-surface-1) 0%, var(--fd-dark-surface-2) 100%) !important;
+}
+
+html.app-skin-dark .card-metric {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+html.app-skin-dark .card-title {
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .card-progress-wrapper {
+    background: var(--fd-dark-surface-2) !important;
+}
+
+html.app-skin-dark .progress-label,
+html.app-skin-dark .progress-value {
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .progress-value {
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .custom-progress {
+    background: var(--fd-dark-surface-0) !important;
+}
+
+html.app-skin-dark .chart-title {
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .chart-dropdown {
+    background: var(--fd-dark-surface-2) !important;
+    color: var(--fd-dark-text) !important;
+    border-color: var(--fd-dark-border) !important;
+}
+
+html.app-skin-dark .cre-followup-panel,
+html.app-skin-dark .cre-followup-table-wrap,
+html.app-skin-dark .cre-stat-chip,
+html.app-skin-dark .cre-followup-date,
+html.app-skin-dark .cre-followup-intro,
+html.app-skin-dark .cre-followup-kpi,
+html.app-skin-dark .cre-custom-range {
+    background: var(--fd-dark-surface-2) !important;
+    border-color: var(--fd-dark-border) !important;
+}
+
+html.app-skin-dark .cre-followup-badge {
+    background: rgba(56, 189, 248, 0.18) !important;
+    color: #7dd3fc !important;
+}
+
+html.app-skin-dark .cre-name,
+html.app-skin-dark .cre-stat-chip .value,
+html.app-skin-dark .cre-followup-kpi .kpi-value {
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .cre-subtext,
+html.app-skin-dark .cre-stat-chip .label,
+html.app-skin-dark .cre-followup-table thead th,
+html.app-skin-dark .cre-followup-kpi .kpi-label {
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .cre-filter-label,
+html.app-skin-dark .cre-input-group label {
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .cre-range-button {
+    background: var(--fd-dark-surface-1) !important;
+    color: var(--fd-dark-text) !important;
+    border-color: var(--fd-dark-border) !important;
+}
+
+html.app-skin-dark .cre-range-button.is-active {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #fff !important;
+}
+
+html.app-skin-dark .cre-custom-range-title {
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .cre-date-input {
+    background: var(--fd-dark-surface-0) !important;
+    border-color: var(--fd-dark-border) !important;
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .cre-followup-table thead th {
+    background: var(--fd-dark-surface-1) !important;
+    border-color: var(--fd-dark-border) !important;
+}
+
+html.app-skin-dark .cre-followup-table tbody td {
+    border-color: rgba(148, 163, 184, 0.12) !important;
+}
+
+html.app-skin-dark .cre-followup-table tbody tr:hover {
+    background: rgba(30, 41, 59, 0.45) !important;
+}
+
+html.app-skin-dark .cre-progress-track {
+    background: rgba(148, 163, 184, 0.3) !important;
+}
+
+html.app-skin-dark .lead-filter-title {
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .lead-filter-period {
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .lead-range-pill {
+    background: var(--fd-dark-surface-2) !important;
+    border-color: var(--fd-dark-border) !important;
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .lead-range-pill.is-active {
+    background: rgba(96, 165, 250, 0.16) !important;
+    border-color: rgba(96, 165, 250, 0.45) !important;
+    color: #dbeafe !important;
+}
+</style>
+
+{% if role == 'admin' %}
+<div class="main-content">
+    <div class="card stretch stretch-full mb-4">
+        <div class="card-body p-3 p-md-4">
+            <form method="get" class="lead-filter-row" id="leadRangeFilterForm">
+                <input type="hidden" name="cre_range" value="{{ cre_range }}">
+                <input type="hidden" name="cre_from" value="{{ cre_from|date:'Y-m-d' }}">
+                <input type="hidden" name="cre_to" value="{{ cre_to|date:'Y-m-d' }}">
+                <div class="lead-filter-summary">
+                    <span class="lead-filter-title">Lead Date Range</span>
+                    <span class="lead-filter-period">{{ lead_range_label }}: {{ lead_period_display }}</span>
+                </div>
+                <div class="lead-range-options">
+                    <label class="lead-range-pill{% if lead_range == 'today' %} is-active{% endif %}">
+                        <input type="radio" name="lead_range" value="today" {% if lead_range == 'today' %}checked{% endif %}>
+                        <span>Today</span>
+                    </label>
+                    <label class="lead-range-pill{% if lead_range == 'weekly' %} is-active{% endif %}">
+                        <input type="radio" name="lead_range" value="weekly" {% if lead_range == 'weekly' %}checked{% endif %}>
+                        <span>Weekly</span>
+                    </label>
+                    <label class="lead-range-pill{% if lead_range == 'monthly' %} is-active{% endif %}">
+                        <input type="radio" name="lead_range" value="monthly" {% if lead_range == 'monthly' %}checked{% endif %}>
+                        <span>Monthly</span>
+                    </label>
+                    <label class="lead-range-pill{% if lead_range == 'yearly' %} is-active{% endif %}">
+                        <input type="radio" name="lead_range" value="yearly" {% if lead_range == 'yearly' %}checked{% endif %}>
+                        <span>Yearly</span>
+                    </label>
+                    <label class="lead-range-pill{% if lead_range == 'custom' %} is-active{% endif %}">
+                        <input type="radio" name="lead_range" value="custom" {% if lead_range == 'custom' %}checked{% endif %}>
+                        <span>Custom</span>
+                    </label>
+                </div>
+                <div class="lead-custom-range" id="leadCustomRangeFields" {% if lead_range != 'custom' %}style="display:none;"{% endif %}>
+                    <input
+                        type="date"
+                        name="lead_from"
+                        id="leadFrom"
+                        class="form-control lead-date-input"
+                        value="{{ lead_from|date:'Y-m-d' }}"
+                    >
+                    <input
+                        type="date"
+                        name="lead_to"
+                        id="leadTo"
+                        class="form-control lead-date-input"
+                        value="{{ lead_to|date:'Y-m-d' }}"
+                    >
+                </div>
+                <div class="lead-filter-actions" id="leadFilterActions" {% if lead_range != 'custom' %}style="display:none;"{% endif %}>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- [Mini Cards] start -->
+    <div class="row g-3 mb-4">
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Total Inquiry</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ total_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if total_inquiry_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            <i class="feather-{% if total_inquiry_change >= 0 %}arrow-up{% else %}arrow-down{% endif %}-circle fs-12"></i>
+                            <span>{% if total_inquiry_change >= 0 %}+{% endif %}{{ total_inquiry_change }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Today Leads</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ today_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if today_leads_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            <i class="feather-{% if today_leads_change >= 0 %}arrow-up{% else %}arrow-down{% endif %}-circle fs-12"></i>
+                            <span>{% if today_leads_change >= 0 %}+{% endif %}{{ today_leads_change }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">With Follow-up</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ followup_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if followup_percentage >= 50 %}text-success{% else %}text-warning{% endif %}">
+                            <i class="feather-arrow-up-circle fs-12"></i>
+                            <span>{{ followup_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Converted</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ enrolled_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if enrolled_count > 0 %}text-success{% else %}text-muted{% endif %}">
+                            <i class="feather-check-circle fs-12"></i>
+                            <span>Enrolled</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Hot Leads (7d)</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ hot_leads_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if hot_leads_percentage >= 20 %}text-danger{% else %}text-muted{% endif %}">
+                            <i class="feather-trending-up fs-12"></i>
+                            <span>{{ hot_leads_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Conversion Rate</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{% if total_count > 0 %}{{ converted_count|floatformat:0|default:0 }}{% else %}0{% endif %}</span>%</h3>
+                        <div class="hstack gap-2 fs-11 {% if total_count > 0 and converted_count > 0 %}text-success{% else %}text-muted{% endif %}">
+                            <i class="feather-arrow-up-circle fs-12"></i>
+                            <span>{{ converted_count }}/{{ total_count }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- [Mini Cards] end -->
+    
+    <div class="row g-4">
+        <!-- Total Leads Card -->
+        <div class="col-xxl-3 col-md-6">
+            <div class="card dashboard-card card-primary stretch stretch-full" style="cursor:pointer;" onclick="window.location.href='{% url 'leads' %}{% if lead_from and lead_to %}?date_from={{ lead_from|date:'Y-m-d' }}&date_to={{ lead_to|date:'Y-m-d' }}{% endif %}'">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="feather-users text-white"></i>
+                        </div>
+                        <a href="#" class="card-menu-btn">
+                            <i class="feather-more-vertical"></i>
+                        </a>
+                    </div>
+                    <div class="card-metric">{{ converted_leads }}/{{ total_leads }}</div>
+                    <div class="card-title">Total Leads</div>
+                    <div class="card-progress-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="progress-label">Converted Leads</span>
+                            <span class="progress-value">{{ converted_leads }} ({% if total_leads > 0 %}{% widthratio converted_leads total_leads 100 %}{% else %}0{% endif %}%)</span>
+                        </div>
+                        <div class="custom-progress">
+                            <div class="custom-progress-bar progress-primary" style="width: {% if total_leads > 0 %}{% widthratio converted_leads total_leads 100 %}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Students Card -->
+        <div class="col-xxl-3 col-md-6">
+            <div class="card dashboard-card card-success stretch stretch-full" style="cursor:pointer;" onclick="window.location.href='{% url 'students' %}'">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                            <i class="feather-user-check text-white"></i>
+                        </div>
+                        <a href="#" class="card-menu-btn">
+                            <i class="feather-more-vertical"></i>
+                        </a>
+                    </div>
+                    <div class="card-metric">{{ active_students }}/{{ total_students }}</div>
+                    <div class="card-title">Active Students</div>
+                    <div class="card-progress-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="progress-label">Enrolled Students</span>
+                            <span class="progress-value">{{ enrolled_students }} ({% widthratio enrolled_students total_students 100 %}%)</span>
+                        </div>
+                        <div class="custom-progress">
+                            <div class="custom-progress-bar progress-success" style="width: {% widthratio enrolled_students total_students 100 %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Revenue Card -->
+        <div class="col-xxl-3 col-md-6">
+            <div class="card dashboard-card card-info stretch stretch-full" style="cursor:pointer;" onclick="window.location.href='{% url 'payments' %}'">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);">
+                            <i class="feather-dollar-sign text-white"></i>
+                        </div>
+                        <a href="#" class="card-menu-btn">
+                            <i class="feather-more-vertical"></i>
+                        </a>
+                    </div>
+                    <div class="card-metric">₹{{ collected_revenue|floatformat:0|default:"0" }}</div>
+                    <div class="card-title">Revenue Collected</div>
+                    <div class="card-progress-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="progress-label">Total Revenue</span>
+                            <span class="progress-value">₹{{ total_revenue|floatformat:0 }} ({% widthratio collected_revenue total_revenue 100 %}%)</span>
+                        </div>
+                        <div class="custom-progress">
+                            <div class="custom-progress-bar progress-info" style="width: {% widthratio collected_revenue total_revenue 100 %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Batches Card -->
+        <div class="col-xxl-3 col-md-6">
+            <div class="card dashboard-card card-danger stretch stretch-full" style="cursor:pointer;" onclick="window.location.href='{% url 'batch' %}'">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="feather-layers text-white"></i>
+                        </div>
+                        <a href="#" class="card-menu-btn">
+                            <i class="feather-more-vertical"></i>
+                        </a>
+                    </div>
+                    <div class="card-metric">{{ active_batches }}/{{ batches }}</div>
+                    <div class="card-title">Active Batches</div>
+                    <div class="card-progress-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="progress-label">Batches Running</span>
+                            <span class="progress-value">{{ active_batches }} ({% widthratio active_batches batches 100 %}%)</span>
+                        </div>
+                        <div class="custom-progress">
+                            <div class="custom-progress-bar progress-warning" style="width: {% widthratio active_batches batches 100 %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CRE Follow-ups (Admin) -->
+    <div class="row g-4 mt-1" id="creFollowupsCard">
+        <div class="col-12">
+            <div class="card dashboard-card cre-followup-panel stretch stretch-full">
+                <div class="card-body p-4">
+                    <div class="cre-followup-toolbar">
+                        <div class="cre-followup-intro">
+                            <div class="cre-followup-intro-top">
+                                <h5 class="chart-title mb-0">CRE Follow-ups</h5>
+                                <span class="cre-followup-badge">{{ cre_range_label }}</span>
+                            </div>
+                            <p class="text-muted small mb-0">Monitor CRE follow-up workload with quick ranges or a custom date window.</p>
+                            <div class="cre-followup-kpis">
+                                <div class="cre-followup-kpi">
+                                    <span class="kpi-label">Selected Period</span>
+                                    <span class="kpi-value">{{ cre_period_display }}</span>
+                                </div>
+                                <div class="cre-followup-kpi">
+                                    <span class="kpi-label">Total Follow-ups</span>
+                                    <span class="kpi-value">{{ cre_followups_total }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <form method="get" class="cre-followup-date" id="creFollowupFilterForm">
+                            <input type="hidden" id="creRangeInput" name="cre_range" value="{{ cre_range }}">
+                            <div class="cre-filter-label">Range Selection</div>
+                            <div class="cre-range-buttons">
+                                <button type="button" class="cre-range-button{% if cre_range == 'today' %} is-active{% endif %}" data-range="today">Today</button>
+                                <button type="button" class="cre-range-button{% if cre_range == 'weekly' %} is-active{% endif %}" data-range="weekly">Weekly</button>
+                                <button type="button" class="cre-range-button{% if cre_range == 'monthly' %} is-active{% endif %}" data-range="monthly">Monthly</button>
+                                <button type="button" class="cre-range-button{% if cre_range == 'yearly' %} is-active{% endif %}" data-range="yearly">Yearly</button>
+                                <button type="button" class="cre-range-button{% if cre_range == 'custom' %} is-active{% endif %}" data-range="custom">Custom</button>
+                            </div>
+                            <div class="cre-custom-range" id="creCustomRangeFields" {% if cre_range != 'custom' %}style="display:none;"{% endif %}>
+                                <div class="cre-custom-range-title">
+                                    <i class="feather-calendar text-primary"></i>
+                                    <span>Custom Date Range</span>
+                                </div>
+                                <div class="cre-input-group">
+                                    <label for="creFrom">Start Date</label>
+                                    <input
+                                        id="creFrom"
+                                        name="cre_from"
+                                        type="date"
+                                        class="form-control cre-date-input"
+                                        value="{{ cre_from|date:'Y-m-d' }}"
+                                    />
+                                </div>
+                                <div class="cre-input-group">
+                                    <label for="creTo">End Date</label>
+                                    <input
+                                        id="creTo"
+                                        name="cre_to"
+                                        type="date"
+                                        class="form-control cre-date-input"
+                                        value="{{ cre_to|date:'Y-m-d' }}"
+                                    />
+                                </div>
+                                <div class="cre-action-wrap">
+                                    <button type="button" class="btn btn-primary cre-apply-btn" onclick="updateFollowupData()">Apply Filter</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    
+                    <div class="table-responsive cre-followup-table-wrap">
+                        <table class="table table-hover cre-followup-table">
+                            <thead>
+                                <tr class="border-b">
+                                    <th>CRE</th>
+                                    <th>Mobile</th>
+                                    <th class="text-center">Total</th>
+                                    <th class="text-center">Pending</th>
+                                    <th class="text-center">Completed</th>
+                                    <th class="text-center">Cancelled</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cre in cre_followup_summaries %}
+                                <tr>
+                                    <td>
+                                        <div class="cre-name-block">
+                                            <div class="cre-name">{{ cre.name }}</div>
+                                            <div class="cre-subtext">CRE Executive</div>
+                                        </div>
+                                        {% if cre.total %}
+                                            {% widthratio cre.completed cre.total 100 as cre_completion_ratio %}
+                                            <div class="cre-progress-track">
+                                                <span class="cre-progress-fill" style="width: {{ cre_completion_ratio }}%;"></span>
+                                            </div>
+                                            <div class="cre-subtext cre-progress-meta">{{ cre.completed }} of {{ cre.total }} completed ({{ cre_completion_ratio }}%)</div>
+                                        {% else %}
+                                            <div class="cre-subtext cre-progress-meta">No follow-ups in selected range</div>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="cre-subtext">{{ cre.mobile }}</span></td>
+                                    <td class="text-center"><span class="status-pill total">{{ cre.total }}</span></td>
+                                    <td class="text-center"><span class="status-pill pending">{{ cre.pending }}</span></td>
+                                    <td class="text-center"><span class="status-pill completed">{{ cre.completed }}</span></td>
+                                    <td class="text-center"><span class="status-pill cancelled">{{ cre.cancelled }}</span></td>
+                                    <td class="text-end">
+                                        <a
+                                            class="btn btn-sm btn-outline-primary cre-followup-action"
+                                            href="{% url 'followups' %}?assigned_to={{ cre.id }}&date_from={{ cre_from|date:'Y-m-d' }}&date_to={{ cre_to|date:'Y-m-d' }}"
+                                        >
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">No CREs found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="row g-4 mt-0">
+        <div class="col-xxl-4 col-md-12">
+            <div class="card dashboard-card stretch stretch-full">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="chart-title mb-1" id="chartTitle">Lead Status</h5>
+                            <p class="text-muted small mb-0" id="chartSubtitle">Distribution by status for {{ lead_period_display }}</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <select id="chartSelector" class="chart-dropdown">
+                                <option value="student">Student Status</option>
+                                <option value="lead" selected>Lead Status</option>
+                            </select>
+                            <a href="#" class="card-menu-btn"><i class="feather-more-vertical"></i></a>
+                        </div>
+                    </div>
+                    <div style="max-width: 400px; margin: 0 auto;">
+                        <canvas id="mainChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Latest Leads -->
+        <div class="col-xxl-8 col-md-12" id="latestLeadsCard">
+            <div class="card dashboard-card stretch stretch-full">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="chart-title mb-1">Latest Leads</h5>
+                            <p class="text-muted small mb-0">Recent lead enquiries for {{ lead_period_display }}</p>
+                        </div>
+                        <a href="#" class="card-menu-btn"><i class="feather-more-vertical"></i></a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr class="border-b">
+                                    <th scope="row">Name</th>
+                                    <th>Contact</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in latest_leads %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'lead_profile' lead.id %}">
+                                            <span class="d-block">{{ lead.full_name }}</span>
+                                            <span class="fs-12 d-block fw-normal text-muted">{{ lead.email }}</span>
+                                        </a>
+                                    </td>
+                                    <td>{{ lead.mobile }}</td>
+                                    <td>{{ lead.enquiry_date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if lead.status %}
+                                        {% with status_lower=lead.status.status_name|lower %}
+                                        {% if 'new' in status_lower or 'fresh' in status_lower %}
+                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;">{{ lead.status.status_name }}</span>
+                                        {% elif 'follow' in status_lower %}
+                                        <span class="badge" style="background:#fef3c7;color:#d97706;">{{ lead.status.status_name }}</span>
+                                        {% elif 'interested' in status_lower %}
+                                        <span class="badge" style="background:#dbeafe;color:#2563eb;">{{ lead.status.status_name }}</span>
+                                        {% elif 'enrolled' in status_lower or 'converted' in status_lower %}
+                                        <span class="badge" style="background:#d1fae5;color:#059669;">{{ lead.status.status_name }}</span>
+                                        {% elif 'not interested' in status_lower or 'rejected' in status_lower %}
+                                        <span class="badge" style="background:#fee2e2;color:#dc2626;">{{ lead.status.status_name }}</span>
+                                        {% elif 'pending' in status_lower %}
+                                        <span class="badge" style="background:#fce7f3;color:#db2777;">{{ lead.status.status_name }}</span>
+                                        {% else %}
+                                        <span class="badge" style="background:#f3e8ff;color:#9333ea;">{{ lead.status.status_name }}</span>
+                                        {% endif %}
+                                        {% endwith %}
+                                        {% else %}
+                                        <span class="badge bg-gray-200 text-dark">No Status</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'lead_profile' lead.id %}"><i class="feather-eye"></i></a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No leads found in the selected date range</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Latest Students -->
+        <div class="col-xxl-8 col-md-12" id="latestStudentsCard" style="display:none;">
+            <div class="card dashboard-card stretch stretch-full">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="chart-title mb-1">Latest Students</h5>
+                            <p class="text-muted small mb-0">Recently enrolled students</p>
+                        </div>
+                        <a href="#" class="card-menu-btn"><i class="feather-more-vertical"></i></a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr class="border-b">
+                                    <th scope="row">Name</th>
+                                    <th>Contact</th>
+                                    <th>Enrolled Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in latest_students %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'student_view' student.id %}">
+                                            <span class="d-block">{{ student.student_name }}</span>
+                                            <span class="fs-12 d-block fw-normal text-muted">{{ student.email }}</span>
+                                        </a>
+                                    </td>
+                                    <td>{{ student.mobile }}</td>
+                                    <td>{{ student.enrolled_date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if student.status == 'active' %}
+                                        <span class="badge" style="background:#d1fae5;color:#059669;">Active</span>
+                                        {% elif student.status == 'enrolled' %}
+                                        <span class="badge" style="background:#dbeafe;color:#2563eb;">Enrolled</span>
+                                        {% elif student.status == 'completed' %}
+                                        <span class="badge" style="background:#f3e8ff;color:#9333ea;">Completed</span>
+                                        {% elif student.status == 'inactive' %}
+                                        <span class="badge" style="background:#fee2e2;color:#dc2626;">Inactive</span>
+                                        {% else %}
+                                        <span class="badge bg-gray-200 text-dark">{{ student.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'student_view' student.id %}"><i class="feather-eye"></i></a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No students found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</div>
+
+<style>
+.chart-dropdown{padding:8px 16px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;font-size:14px;font-weight:600;color:#334155;cursor:pointer;transition:all 0.3s ease;min-width:180px;}
+.chart-dropdown:hover{border-color:#667eea;box-shadow:0 2px 8px rgba(102,126,234,0.15);}
+.chart-dropdown:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    initializeDashboard();
+});
+
+function initializeDashboard() {
+    initializeLeadRangeFilter();
+
+    const rangeInput = document.getElementById('creRangeInput');
+    const rangeButtons = document.querySelectorAll('.cre-range-button');
+    const customFields = document.getElementById('creCustomRangeFields');
+    const filterForm = document.getElementById('creFollowupFilterForm');
+
+    if (!rangeInput || !customFields || !filterForm || !rangeButtons.length) {
+        return;
+    }
+
+    function syncCustomRangeVisibility() {
+        const isCustom = rangeInput.value === 'custom';
+        customFields.style.display = isCustom ? 'flex' : 'none';
+    }
+
+    function syncActiveRange() {
+        rangeButtons.forEach(function (button) {
+            button.classList.toggle('is-active', button.dataset.range === rangeInput.value);
+        });
+    }
+
+    rangeButtons.forEach(function (button) {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            rangeInput.value = button.dataset.range;
+            syncActiveRange();
+            syncCustomRangeVisibility();
+            if (rangeInput.value !== 'custom') {
+                updateFollowupData();
+            }
+        });
+    });
+
+    syncActiveRange();
+    syncCustomRangeVisibility();
+}
+
+function initializeLeadRangeFilter() {
+    const filterForm = document.getElementById('leadRangeFilterForm');
+    const customFields = document.getElementById('leadCustomRangeFields');
+    const actionWrap = document.getElementById('leadFilterActions');
+    const fromInput = document.getElementById('leadFrom');
+    const toInput = document.getElementById('leadTo');
+    const radios = document.querySelectorAll('#leadRangeFilterForm input[name="lead_range"]');
+
+    if (!filterForm || !customFields || !radios.length) {
+        return;
+    }
+
+    function syncLeadCustomVisibility() {
+        const selected = filterForm.querySelector('input[name="lead_range"]:checked');
+        const isCustom = selected && selected.value === 'custom';
+        customFields.style.display = isCustom ? 'flex' : 'none';
+        if (actionWrap) {
+            actionWrap.style.display = isCustom ? 'flex' : 'none';
+        }
+        if (fromInput) {
+            fromInput.required = !!isCustom;
+        }
+        if (toInput) {
+            toInput.required = !!isCustom;
+        }
+    }
+
+    function syncLeadActiveRange() {
+        document.querySelectorAll('#leadRangeFilterForm .lead-range-pill').forEach(function (pill) {
+            const radio = pill.querySelector('input[name="lead_range"]');
+            pill.classList.toggle('is-active', !!radio && radio.checked);
+        });
+    }
+
+    radios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            syncLeadActiveRange();
+            syncLeadCustomVisibility();
+            if (radio.checked && radio.value !== 'custom') {
+                filterForm.requestSubmit();
+            }
+        });
+    });
+
+    syncLeadActiveRange();
+    syncLeadCustomVisibility();
+}
+
+function updateFollowupData() {
+    const filterForm = document.getElementById('creFollowupFilterForm');
+    if (!filterForm) return;
+    
+    const formData = new FormData(filterForm);
+    const params = new URLSearchParams(formData);
+    
+    fetch(window.location.pathname + '?' + params.toString(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newFollowupCard = doc.querySelector('#creFollowupsCard');
+        if (newFollowupCard) {
+            document.querySelector('#creFollowupsCard').innerHTML = newFollowupCard.innerHTML;
+            // Re-initialize event listeners for the new content
+            initializeDashboard();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating followup data:', error);
+    });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#64748b';
+
+const chartData={
+    student:{
+        labels:['Active','Enrolled','Completed'],
+        data:[{{active_students|default:"0"}},{{enrolled_students|default:"0"}},{{completed_students|default:"0"}}],
+        colors:['#CE72FF','rgba(56,239,125,0.9)','rgba(59,130,246,0.9)']
+    },
+    lead:{
+        labels:[{% for label in lead_status_labels %}'{{label}}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        data:[{% for count in lead_status_counts %}{{count}}{% if not forloop.last %},{% endif %}{% endfor %}],
+        colors:['rgba(245,87,108,0.9)','rgba(240,147,251,0.9)','rgba(102,126,234,0.9)','rgba(56,239,125,0.9)','rgba(59,130,246,0.9)','rgba(255,159,64,0.9)']
+    }
+};
+
+const ctx=document.getElementById('mainChart');
+let chart=new Chart(ctx,{type:'doughnut',data:{labels:chartData.lead.labels,datasets:[{data:chartData.lead.data,backgroundColor:chartData.lead.colors,borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:20,font:{size:12,weight:'600'}}},tooltip:{backgroundColor:'rgba(0,0,0,0.8)',padding:12,cornerRadius:8}}}});
+
+document.getElementById('chartTitle').textContent='Lead Status';
+
+document.getElementById('chartSelector').addEventListener('change',function(e){
+    const type=e.target.value;
+    chart.data.labels=chartData[type].labels;
+    chart.data.datasets[0].data=chartData[type].data;
+    chart.data.datasets[0].backgroundColor=chartData[type].colors;
+    chart.update();
+    document.getElementById('chartTitle').textContent=type==='student'?'Student Status':'Lead Status';
+    
+    if(type==='lead'){
+        document.getElementById('latestLeadsCard').style.display='block';
+        document.getElementById('latestStudentsCard').style.display='none';
+    }else{
+        document.getElementById('latestLeadsCard').style.display='none';
+        document.getElementById('latestStudentsCard').style.display='block';
+    }
+});
+</script>
+
+
+
+{% elif role == 'trainer' %}
+<!-- Trainer Dashboard -->
+<div class="main-content">
+    
+
+    <div class="trainer-stat-grid mb-4">
+        <div class="trainer-stat-card">
+            <div class="trainer-stat-header">
+                <span class="trainer-stat-label">Active Batches</span>
+                <span class="trainer-icon-badge" style="background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);"><i class="feather-layers"></i></span>
+            </div>
+            <div class="trainer-stat-value">{{ active_batches_count }}</div>
+            <div class="trainer-stat-note">Batches currently assigned to you</div>
+        </div>
+        <div class="trainer-stat-card">
+            <div class="trainer-stat-header">
+                <span class="trainer-stat-label">Students</span>
+                <span class="trainer-icon-badge" style="background: linear-gradient(135deg, #059669 0%, #22c55e 100%);"><i class="feather-users"></i></span>
+            </div>
+            <div class="trainer-stat-value">{{ total_students }}</div>
+            <div class="trainer-stat-note">Active student load across your batches</div>
+        </div>
+        <div class="trainer-stat-card">
+            <div class="trainer-stat-header">
+                <span class="trainer-stat-label">Syllabus Completion</span>
+                <span class="trainer-icon-badge" style="background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);"><i class="feather-activity"></i></span>
+            </div>
+            <div class="trainer-stat-value">{{ overall_syllabus_completion|floatformat:0 }}%</div>
+            <div class="trainer-stat-note">{{ completed_topic_slots }}/{{ total_topic_slots }} topics completed</div>
+        </div>
+        
+        <div class="trainer-stat-card">
+            <div class="trainer-stat-header">
+                <span class="trainer-stat-label">Upcoming Items</span>
+                <span class="trainer-icon-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);"><i class="feather-alert-triangle"></i></span>
+            </div>
+            <div class="trainer-stat-value">{{ assignments_due_this_week_count|add:upcoming_exams_count }}</div>
+            <div class="trainer-stat-note">{{ assignments_due_this_week_count }} assignments and {{ upcoming_exams_count }} exams due in 7 days</div>
+        </div>
+        <div class="trainer-stat-card">
+            <div class="trainer-stat-header">
+                <span class="trainer-stat-label">Pending Submissions</span>
+                <span class="trainer-icon-badge" style="background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);"><i class="feather-inbox"></i></span>
+            </div>
+            <div class="trainer-stat-value">{{ pending_submissions_count }}</div>
+            <div class="trainer-stat-note">Assignment submissions awaiting completion</div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xxl-7">
+            <div class="trainer-grid-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="trainer-section-title">Batch Overview</h5>
+                            <p class="trainer-section-subtitle">Your teaching load, student count, and syllabus delivery by batch</p>
+                        </div>
+                        <a href="{% url 'batch' %}" class="btn btn-sm btn-outline-primary">View Batches</a>
+                    </div>
+                    <div class="trainer-batch-list">
+                        {% for batch in trainer_batches %}
+                        <div class="trainer-batch-card">
+                            <a href="{% url 'batch_students' batch.id %}" class="trainer-card-link">
+                                <div class="trainer-batch-name">{{ batch.batch_name }}</div>
+                            </a>
+                            <div class="trainer-batch-meta">{{ batch.course_name }} • {{ batch.mode }} • Ends {{ batch.end_date|date:"d M Y" }}</div>
+                            <div class="trainer-batch-stats">
+                                <span class="trainer-pill"><i class="feather-users"></i>{{ batch.students_count }} students</span>
+                                <span class="trainer-pill"><i class="feather-book-open"></i>{{ batch.completed_topics }}/{{ batch.total_topics }} topics</span>
+                                <span class="trainer-pill"><i class="feather-edit"></i>{{ batch.partial_topics }} partial</span>
+                            </div>
+                            <div class="trainer-mini-progress">
+                                <div class="trainer-mini-progress-bar" style="width: {{ batch.progress_percent }}%;"></div>
+                            </div>
+                            <div class="trainer-stat-note">{{ batch.progress_percent|floatformat:0 }}% syllabus completed</div>
+                        </div>
+                        {% empty %}
+                        <div class="trainer-empty">No active batches are currently assigned.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-5">
+            <div class="trainer-grid-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="trainer-section-title">Upcoming Exams</h5>
+                            <p class="trainer-section-subtitle">Scheduled in the next 7 days</p>
+                        </div>
+                        <a href="{% url 'exam_list' %}" class="btn btn-sm btn-outline-primary">Manage Exams</a>
+                    </div>
+                    <div class="trainer-list">
+                        {% for exam in upcoming_exams %}
+                        <div class="trainer-list-item">
+                            <div>
+                                <div class="trainer-list-title">{{ exam.title }}</div>
+                                <div class="trainer-list-meta">{{ exam.batch.batch_name }} • {{ exam.batch.course.course_name }}</div>
+                            </div>
+                            <div class="trainer-list-date">{{ exam.exam_date|date:"d M Y" }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="trainer-empty">No exams are scheduled for the next 7 days.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="trainer-grid-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="trainer-section-title">Assignments Due</h5>
+                            <p class="trainer-section-subtitle">Deadlines to watch this week</p>
+                        </div>
+                        <a href="{% url 'assignment_list' %}" class="btn btn-sm btn-outline-primary">View Assignments</a>
+                    </div>
+                    <div class="trainer-list">
+                        {% for assignment in assignments_due_this_week %}
+                        <div class="trainer-list-item">
+                            <div>
+                                <div class="trainer-list-title">{{ assignment.title }}</div>
+                                <div class="trainer-list-meta">{{ assignment.batch.batch_name }} • {{ assignment.batch.course.course_name }}</div>
+                            </div>
+                            <div class="trainer-list-date">{{ assignment.due_date|date:"d M Y" }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="trainer-empty">No assignment deadlines in the next 7 days.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="trainer-grid-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="trainer-section-title">Recent Session Activity</h5>
+                    <p class="trainer-section-subtitle">Latest session updates across your batches</p>
+                </div>
+                <a href="{% url 'session_update_list' %}" class="btn btn-sm btn-outline-primary">View All Sessions</a>
+            </div>
+            <div class="trainer-list">
+                {% for session in recent_sessions %}
+                <div class="trainer-list-item">
+                    <div>
+                        <div class="trainer-list-title">{{ session.batch.batch_name }}</div>
+                        <div class="trainer-list-meta">{{ session.batch.course.course_name }} • {% if session.attendance_marked %}Attendance marked{% else %}Attendance pending{% endif %}{% if session.assignment_given %} • {{ session.assignment_given }}{% endif %}</div>
+                    </div>
+                    <div class="trainer-list-date">{{ session.session_date|date:"d M Y" }}</div>
+                </div>
+                {% empty %}
+                <div class="trainer-empty">No recent session activity available.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif role == 'cre' %}
+<!-- CRE Dashboard -->
+<div class="main-content">
+    <div class="metrics-section mb-4">
+        <div class="cre-overview-header">
+            <div class="cre-overview-title-wrap">
+                <h4 class="metrics-section-title">CRE Performance Overview</h4>
+                <p class="metrics-section-subtitle">A single view of follow-up execution and payment recovery, organized to make daily priorities easier to scan.</p>
+            </div>
+            <div class="cre-overview-pills">
+                <div class="cre-overview-pill">
+                    <span class="cre-overview-pill-label">Follow-up Rate</span>
+                    <span class="cre-overview-pill-value">{{ followup_completion_rate }}%</span>
+                </div>
+                {% if show_payment_cards %}
+                <div class="cre-overview-pill">
+                    <span class="cre-overview-pill-label">Collection Rate</span>
+                    <span class="cre-overview-pill-value">{{ payment_collection_rate }}%</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="cre-overview-panels{% if not show_payment_cards %} no-payment{% endif %}">
+            <section class="cre-summary-panel followup-panel">
+                <div class="cre-summary-panel-head">
+                    <div>
+                        <span class="cre-summary-kicker">
+                            <i class="feather-phone-call"></i>
+                            Follow-ups
+                        </span>
+                        <h5 class="cre-summary-panel-title">Team follow-up health</h5>
+                        <p class="cre-summary-panel-subtitle">Track workload, completions, and open items at a glance.</p>
+                    </div>
+                    <div class="cre-summary-highlight">
+                        <span class="cre-summary-highlight-label">Total Open + Closed</span>
+                        <span class="cre-summary-highlight-value">{{ total_followups_count }}</span>
+                    </div>
+                </div>
+
+                <div class="cre-summary-card-grid">
+                    <article class="cre-summary-card followup-total">
+                        <div class="cre-summary-card-top">
+                            <span class="cre-summary-icon"><i class="feather-layers"></i></span>
+                            <span class="cre-summary-meta">Overall</span>
+                        </div>
+                        <div class="cre-summary-value">{{ total_followups_count }}</div>
+                        <div class="cre-summary-label">Total Follow Ups</div>
+                        <div class="cre-summary-foot">Completion rate: {{ followup_completion_rate }}%</div>
+                        <div class="cre-summary-progress">
+                            <div class="cre-summary-progress-bar" style="width: {{ followup_completion_rate }}%"></div>
+                        </div>
+                    </article>
+
+                    <article class="cre-summary-card followup-completed">
+                        <div class="cre-summary-card-top">
+                            <span class="cre-summary-icon"><i class="feather-check-circle"></i></span>
+                            <span class="cre-summary-meta">Closed</span>
+                        </div>
+                        <div class="cre-summary-value">{{ completed_followups_count }}</div>
+                        <div class="cre-summary-label">Completed Follow Ups</div>
+                        <div class="cre-summary-foot">Share of total: {% widthratio completed_followups_count total_followups_count 100 %}%</div>
+                        <div class="cre-summary-progress">
+                            <div class="cre-summary-progress-bar" style="width: {% widthratio completed_followups_count total_followups_count 100 %}%"></div>
+                        </div>
+                    </article>
+
+                    <article class="cre-summary-card followup-pending">
+                        <div class="cre-summary-card-top">
+                            <span class="cre-summary-icon"><i class="feather-clock"></i></span>
+                            <span class="cre-summary-meta">Action Needed</span>
+                        </div>
+                        <div class="cre-summary-value">{{ pending_followups_count }}</div>
+                        <div class="cre-summary-label">Pending Follow Ups</div>
+                        <div class="cre-summary-foot">Share of total: {% widthratio pending_followups_count total_followups_count 100 %}%</div>
+                        <div class="cre-summary-progress">
+                            <div class="cre-summary-progress-bar" style="width: {% widthratio pending_followups_count total_followups_count 100 %}%"></div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            {% if show_payment_cards %}
+            <section class="cre-summary-panel payment-panel">
+                <div class="cre-summary-panel-head">
+                    <div>
+                        <span class="cre-summary-kicker">
+                            <i class="feather-credit-card"></i>
+                            Payments
+                        </span>
+                        <h5 class="cre-summary-panel-title">Collection and dues</h5>
+                        <p class="cre-summary-panel-subtitle">Separate pending, overdue, and collected amounts in one structured block.</p>
+                    </div>
+                    <div class="cre-summary-highlight">
+                        <span class="cre-summary-highlight-label">Collected So Far</span>
+                        <span class="cre-summary-highlight-value">&#8377;{{ payment_collected_amount|floatformat:0 }}</span>
+                    </div>
+                </div>
+
+                <div class="cre-summary-card-grid">
+                    <article class="cre-summary-card payment-pending">
+                        <div class="cre-summary-card-top">
+                            <span class="cre-summary-icon"><i class="feather-alert-circle"></i></span>
+                            <span class="cre-summary-meta">Pipeline</span>
+                        </div>
+                        <div class="cre-summary-value">{{ payment_pending_count }}</div>
+                        <div class="cre-summary-label">Pending Payments</div>
+                        <div class="cre-summary-foot">Pending amount: &#8377;{{ payment_pending_amount|floatformat:0 }}</div>
+                        <div class="cre-summary-progress">
+                            <div class="cre-summary-progress-bar" style="width: {% widthratio payment_pending_count payment_total_fees_count 100 %}%"></div>
+                        </div>
+                    </article>
+
+                    <article class="cre-summary-card payment-overdue">
+                        <div class="cre-summary-card-top">
+                            <span class="cre-summary-icon"><i class="feather-x-octagon"></i></span>
+                            <span class="cre-summary-meta">Risk</span>
+                        </div>
+                        <div class="cre-summary-value">{{ payment_overdue_count }}</div>
+                        <div class="cre-summary-label">Overdue Payments</div>
+                        <div class="cre-summary-foot">Overdue amount: &#8377;{{ payment_overdue_amount|floatformat:0 }}</div>
+                        <div class="cre-summary-progress">
+                            <div class="cre-summary-progress-bar" style="width: {% widthratio payment_overdue_count payment_total_fees_count 100 %}%"></div>
+                        </div>
+                    </article>
+
+                    <article class="cre-summary-card payment-collected">
+                        <div class="cre-summary-card-top">
+                            <span class="cre-summary-icon"><i class="feather-dollar-sign"></i></span>
+                            <span class="cre-summary-meta">Recovered</span>
+                        </div>
+                        <div class="cre-summary-value">&#8377;{{ payment_collected_amount|floatformat:0 }}</div>
+                        <div class="cre-summary-label">Collected So Far</div>
+                        <div class="cre-summary-foot">Collection rate: {{ payment_collection_rate }}%</div>
+                        <div class="cre-summary-progress">
+                            <div class="cre-summary-progress-bar" style="width: {{ payment_collection_rate }}%"></div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-6">
+            <div class="card followup-calendar-card h-100">
+                <div class="card-body">
+                    <div class="calendar-topbar">
+                        <div>
+                            <h3 class="calendar-page-title">Calendar</h3>
+                            <p class="calendar-page-subtitle">Choose a day to see follow-ups assigned for that date.</p>
+                        </div>
+                        <div class="followup-filter-group" role="tablist" aria-label="Follow-up status filter">
+                            <button type="button" class="followup-filter active" data-filter="all">All</button>
+                            <button type="button" class="followup-filter" data-filter="pending">Pending</button>
+                            <button type="button" class="followup-filter" data-filter="completed">Completed</button>
+                            <button type="button" class="followup-filter" data-filter="cancelled">Cancelled</button>
+                        </div>
+                    </div>
+
+                    <div class="calendar-nav-row">
+                        <button type="button" class="calendar-nav-btn" id="calendarPrevBtn" aria-label="Previous month">
+                            <i class="feather-chevron-left"></i>
+                        </button>
+                        <div class="calendar-month-title" id="calendarMonthLabel">{{ display_month|date:"F Y" }}</div>
+                        <button type="button" class="calendar-nav-btn" id="calendarNextBtn" aria-label="Next month">
+                            <i class="feather-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="calendar-grid calendar-weekdays">
+                        <div>Sun</div>
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
+                    </div>
+                    <div class="calendar-grid calendar-days" id="followupCalendarDays"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card followup-list-card h-100">
+                <div class="card-body">
+                    <div class="followup-list-header">
+                        <div>
+                            <h4 class="followup-list-title" id="selectedFollowupDateLabel">Follow-ups on {{ selected_followup_date|date:"d M Y" }}</h4>
+                            <p class="followup-list-subtitle">Filtered by the selected day and status.</p>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light" id="selectedFollowupCountBadge">0 follow-ups</span>
+                    </div>
+                    <div class="followup-list" id="selectedFollowupsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-xl-6">
+            <div class="card followup-list-card h-100">
+                <div class="card-body">
+                    <div class="followup-list-header">
+                        <div>
+                            <h4 class="followup-list-title">All Pending Follow-ups</h4>
+                            <p class="followup-list-subtitle">Every pending follow-up assigned to you.</p>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light">{{ pending_followups_count }}</span>
+                    </div>
+                    <div class="followup-list">
+                        {% for followup in all_pending_followups %}
+                            <a href="{% url 'lead_profile' followup.lead.id %}" class="followup-list-item">
+                                <div class="followup-item-header">
+                                    <div>
+                                        <div class="followup-item-title">{{ followup.title }}</div>
+                                        <div class="followup-item-meta">{{ followup.lead.full_name }}</div>
+                                    </div>
+                                    <span class="followup-status-badge followup-status-pending">{{ followup.get_status_display }}</span>
+                                </div>
+                                <div class="followup-item-meta">{{ followup.followup_date|date:"d M Y" }}{% if followup.followup_time %}, {{ followup.followup_time|time:"h:i A" }}{% endif %}</div>
+                                <div class="followup-item-meta">{{ followup.lead.mobile }}{% if followup.lead.email %} | {{ followup.lead.email }}{% endif %}</div>
+                                <div class="followup-item-notes">{{ followup.notes|default:"No notes" }}</div>
+                            </a>
+                        {% empty %}
+                            <div class="followup-list-empty">No pending follow-ups found.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card followup-list-card h-100">
+                <div class="card-body">
+                    <div class="followup-list-header">
+                        <div>
+                            <h4 class="followup-list-title">All Completed Follow-ups</h4>
+                            <p class="followup-list-subtitle">Every completed follow-up assigned to you.</p>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light">{{ completed_followups_count }}</span>
+                    </div>
+                    <div class="followup-list">
+                        {% for followup in all_completed_followups %}
+                            <a href="{% url 'lead_profile' followup.lead.id %}" class="followup-list-item">
+                                <div class="followup-item-header">
+                                    <div>
+                                        <div class="followup-item-title">{{ followup.title }}</div>
+                                        <div class="followup-item-meta">{{ followup.lead.full_name }}</div>
+                                    </div>
+                                    <span class="followup-status-badge followup-status-completed">{{ followup.get_status_display }}</span>
+                                </div>
+                                <div class="followup-item-meta">{{ followup.followup_date|date:"d M Y" }}{% if followup.followup_time %}, {{ followup.followup_time|time:"h:i A" }}{% endif %}</div>
+                                <div class="followup-item-meta">{{ followup.lead.mobile }}{% if followup.lead.email %} | {{ followup.lead.email }}{% endif %}</div>
+                                <div class="followup-item-notes">{{ followup.notes|default:"No notes" }}</div>
+                            </a>
+                        {% empty %}
+                            <div class="followup-list-empty">No completed follow-ups found.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ calendar_followups_json|json_script:"calendar-followups-data" }}
+
+<style>
+.main-content {
+    padding-bottom: 24px;
+}
+
+.metrics-section {
+    border: 1px solid #dbe3ef;
+    border-radius: 24px;
+    padding: 22px;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 28%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.cre-overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.cre-overview-title-wrap {
+    max-width: 720px;
+}
+
+.metrics-section-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.metrics-section-subtitle {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.cre-overview-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.cre-overview-pill {
+    min-width: 132px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.cre-overview-pill-label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.cre-overview-pill-value {
+    display: block;
+    font-size: 1rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.cre-overview-panels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.cre-overview-panels.no-payment {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.cre-summary-panel {
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.cre-summary-panel.followup-panel {
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.9) 0%, #ffffff 100%);
+}
+
+.cre-summary-panel.payment-panel {
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.9) 0%, #ffffff 100%);
+}
+
+.cre-summary-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cre-summary-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.05);
+    color: #334155;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.cre-summary-panel-title {
+    margin: 10px 0 4px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cre-summary-panel-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}
+
+.cre-summary-highlight {
+    text-align: right;
+}
+
+.cre-summary-highlight-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.cre-summary-highlight-value {
+    display: block;
+    font-size: 1.5rem;
+    color: #0f172a;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.cre-summary-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.cre-summary-card {
+    position: relative;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+}
+
+.cre-summary-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--summary-accent, linear-gradient(90deg, #94a3b8, #64748b));
+}
+
+.cre-summary-card.followup-total {
+    --summary-accent: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+}
+
+.cre-summary-card.followup-completed {
+    --summary-accent: linear-gradient(90deg, #059669 0%, #22c55e 100%);
+}
+
+.cre-summary-card.followup-pending,
+.cre-summary-card.payment-overdue {
+    --summary-accent: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+}
+
+.cre-summary-card.payment-pending {
+    --summary-accent: linear-gradient(90deg, #0891b2 0%, #3b82f6 100%);
+}
+
+.cre-summary-card.payment-collected {
+    --summary-accent: linear-gradient(90deg, #16a34a 0%, #10b981 100%);
+}
+
+.cre-summary-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.cre-summary-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+}
+
+.cre-summary-card.followup-total .cre-summary-icon {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+
+.cre-summary-card.followup-completed .cre-summary-icon,
+.cre-summary-card.payment-collected .cre-summary-icon {
+    background: linear-gradient(135deg, #059669 0%, #22c55e 100%);
+}
+
+.cre-summary-card.followup-pending .cre-summary-icon,
+.cre-summary-card.payment-overdue .cre-summary-icon {
+    background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+}
+
+.cre-summary-card.payment-pending .cre-summary-icon {
+    background: linear-gradient(135deg, #0891b2 0%, #3b82f6 100%);
+}
+
+.cre-summary-meta {
+    font-size: 0.76rem;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.cre-summary-value {
+    color: #0f172a;
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 8px;
+}
+
+.cre-summary-label {
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.cre-summary-foot {
+    color: #64748b;
+    font-size: 0.84rem;
+}
+
+.cre-summary-progress {
+    height: 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.cre-summary-progress-bar {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--summary-accent, linear-gradient(90deg, #94a3b8, #64748b));
+}
+
+.followup-calendar-card,
+.followup-list-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 24px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
+    background: #ffffff;
+}
+
+.followup-calendar-card .card-body,
+.followup-list-card .card-body {
+    padding: 22px;
+}
+
+.calendar-topbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.calendar-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1e293b;
+}
+
+.calendar-page-subtitle {
+    margin: 6px 0 0;
+    color: #64748b;
+}
+
+.followup-filter-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.followup-filter {
+    border: 1px solid #dbe2ea;
+    background: #fff;
+    color: #475569;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.followup-filter.active {
+    background: #0f766e;
+    color: #fff;
+    border-color: #0f766e;
+}
+
+.calendar-nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 12px;
+}
+
+.calendar-month-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+    flex: 1;
+}
+
+.calendar-nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #d7e0ea;
+    background: #fff;
+    color: #0284c7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.calendar-weekdays {
+    margin-bottom: 7px;
+    color: #64748b;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.calendar-weekdays > div {
+    padding: 7px 0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.calendar-day {
+    min-height: 76px;
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 7px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+    position: relative;
+}
+
+.calendar-day:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.calendar-day-number {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.calendar-day-count {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    align-self: flex-end;
+}
+
+.calendar-day-default {
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    color: #1f2937;
+}
+
+.calendar-day-pending {
+    background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+    border-color: #16a34a;
+}
+
+.calendar-day-completed {
+    background: linear-gradient(180deg, #cffafe 0%, #a5f3fc 100%);
+    color: #0f172a;
+    border-color: #67e8f9;
+}
+
+.calendar-day-cancelled {
+    background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
+    color: #1f2937;
+    border-color: #c4b5fd;
+}
+
+.calendar-day-selected {
+    background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+    color: #0f172a;
+    box-shadow: inset 0 0 0 2px #38bdf8;
+    border-color: #38bdf8;
+}
+
+.calendar-day-today {
+    background: linear-gradient(180deg, #fefce8 0%, #fef3c7 100%);
+    color: #1f2937;
+    box-shadow: inset 0 0 0 2px #94a3b8;
+    border-color: #facc15;
+}
+
+.calendar-day.is-outside {
+    background: #f8fafc;
+    color: #94a3b8;
+    opacity: 0.75;
+}
+
+.followup-list-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.followup-list-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.followup-list-subtitle {
+    margin: 4px 0 0;
+    color: #64748b;
+}
+
+.followup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 520px;
+    overflow: auto;
+}
+
+.followup-list-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 14px;
+    text-decoration: none;
+    color: inherit;
+    background: #fff;
+}
+
+.followup-list-item:hover {
+    border-color: #bae6fd;
+    background: #f8fdff;
+}
+
+.followup-item-title {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.followup-item-meta,
+.followup-item-notes {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.followup-item-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.followup-status-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.followup-status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.followup-status-completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.followup-status-cancelled {
+    background: #e5e7eb;
+    color: #475569;
+}
+
+.followup-list-empty {
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 16px;
+    color: #64748b;
+    background: #f8fafc;
+}
+
+@media (max-width: 991.98px) {
+    .cre-overview-header,
+    .calendar-topbar,
+    .followup-list-header {
+        flex-direction: column;
+    }
+
+    .cre-overview-pills {
+        justify-content: flex-start;
+    }
+
+    .cre-overview-panels,
+    .cre-summary-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cre-summary-highlight {
+        text-align: left;
+    }
+
+    .followup-filter-group {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .metrics-section {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .followup-calendar-card .card-body,
+    .followup-list-card .card-body {
+        padding: 16px;
+    }
+
+    .cre-summary-panel {
+        padding: 16px;
+    }
+
+    .cre-summary-panel-head {
+        flex-direction: column;
+    }
+
+    .calendar-month-title {
+        font-size: 1.15rem;
+    }
+
+    .calendar-grid {
+        gap: 5px;
+    }
+
+    .calendar-day {
+        min-height: 64px;
+        border-radius: 10px;
+        padding: 6px 5px;
+    }
+
+    .calendar-day-number {
+        font-size: 0.92rem;
+    }
+
+    .followup-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+html.app-skin-dark .metrics-section,
+html.app-skin-dark .cre-summary-panel,
+html.app-skin-dark .cre-summary-card,
+html.app-skin-dark .cre-overview-pill {
+    background: var(--fd-dark-surface-1) !important;
+    border-color: var(--fd-dark-border) !important;
+}
+
+html.app-skin-dark .cre-summary-panel.followup-panel,
+html.app-skin-dark .cre-summary-panel.payment-panel {
+    background: linear-gradient(180deg, var(--fd-dark-surface-2) 0%, var(--fd-dark-surface-1) 100%) !important;
+}
+
+html.app-skin-dark .metrics-section-title,
+html.app-skin-dark .cre-overview-pill-value,
+html.app-skin-dark .cre-summary-panel-title,
+html.app-skin-dark .cre-summary-highlight-value,
+html.app-skin-dark .cre-summary-value,
+html.app-skin-dark .cre-summary-label {
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .metrics-section-subtitle,
+html.app-skin-dark .cre-overview-pill-label,
+html.app-skin-dark .cre-summary-panel-subtitle,
+html.app-skin-dark .cre-summary-highlight-label,
+html.app-skin-dark .cre-summary-meta,
+html.app-skin-dark .cre-summary-foot {
+    color: var(--fd-dark-muted) !important;
+}
+
+html.app-skin-dark .cre-summary-kicker {
+    background: rgba(148, 163, 184, 0.16) !important;
+    color: var(--fd-dark-text) !important;
+}
+
+html.app-skin-dark .cre-summary-progress {
+    background: var(--fd-dark-surface-0) !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const rawFollowups = document.getElementById('calendar-followups-data');
+    const monthLabel = document.getElementById('calendarMonthLabel');
+    const daysContainer = document.getElementById('followupCalendarDays');
+    const listContainer = document.getElementById('selectedFollowupsList');
+    const dateLabel = document.getElementById('selectedFollowupDateLabel');
+    const countBadge = document.getElementById('selectedFollowupCountBadge');
+    const prevBtn = document.getElementById('calendarPrevBtn');
+    const nextBtn = document.getElementById('calendarNextBtn');
+    const filterButtons = document.querySelectorAll('.followup-filter');
+
+    if (!rawFollowups || !monthLabel || !daysContainer || !listContainer || !dateLabel || !countBadge || !prevBtn || !nextBtn) {
+        return;
+    }
+
+    const followups = JSON.parse(rawFollowups.textContent);
+    const todayIso = "{{ today|date:'Y-m-d' }}";
+    const leadBaseUrl = "{% url 'lead_profile' 0 %}".replace(/0\/$/, '');
+    let selectedDate = new Date("{{ selected_followup_date|date:'Y-m-d' }}T00:00:00");
+    let visibleMonth = new Date("{{ display_month|date:'Y-m-d' }}T00:00:00");
+    let activeFilter = 'all';
+
+    function pad(value) {
+        return String(value).padStart(2, '0');
+    }
+
+    function toIso(date) {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function formatDisplayDate(date) {
+        return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function filteredFollowups() {
+        if (activeFilter === 'all') {
+            return followups;
+        }
+        return followups.filter(item => item.status === activeFilter);
+    }
+
+    function statsByDate() {
+        const map = new Map();
+        filteredFollowups().forEach(function (item) {
+            if (!map.has(item.date)) {
+                map.set(item.date, { total: 0, completed: 0, pending: 0, cancelled: 0 });
+            }
+            const entry = map.get(item.date);
+            entry.total += 1;
+            entry[item.status] += 1;
+        });
+        return map;
+    }
+
+    function statusTone(dateIso, inMonth, statsMap) {
+        const stats = statsMap.get(dateIso);
+        if (!inMonth) return 'outside';
+        if (dateIso === toIso(selectedDate)) return 'selected';
+        if (dateIso === todayIso) return 'today';
+        if (stats && stats.pending) return 'pending';
+        if (stats && stats.completed) return 'completed';
+        if (stats && stats.cancelled) return 'cancelled';
+        return 'default';
+    }
+
+    function renderList() {
+        const iso = toIso(selectedDate);
+        const items = filteredFollowups().filter(item => item.date === iso);
+        const filterLabel = activeFilter === 'all' ? 'all follow-ups' : `${activeFilter} follow-ups`;
+        dateLabel.textContent = `Follow-ups on ${formatDisplayDate(selectedDate)}`;
+        countBadge.textContent = `${items.length} ${filterLabel}`;
+
+        if (!items.length) {
+            listContainer.innerHTML = '<div class="followup-list-empty">No follow-ups found for this date and filter.</div>';
+            return;
+        }
+
+        listContainer.innerHTML = items.map(function (item) {
+            return `
+                <a href="${leadBaseUrl}${item.lead_id}/" class="followup-list-item">
+                    <div class="followup-item-header">
+                        <div>
+                            <div class="followup-item-title">${escapeHtml(item.title)}</div>
+                            <div class="followup-item-meta">${escapeHtml(item.lead_name)}</div>
+                        </div>
+                        <span class="followup-status-badge followup-status-${escapeHtml(item.status)}">${escapeHtml(item.status_display)}</span>
+                    </div>
+                    <div class="followup-item-meta">${escapeHtml(item.date)}${item.time ? `, ${escapeHtml(item.time)}` : ''}</div>
+                    <div class="followup-item-meta">${escapeHtml(item.lead_mobile)}${item.lead_email ? ` | ${escapeHtml(item.lead_email)}` : ''}</div>
+                    <div class="followup-item-notes">${escapeHtml(item.notes || 'No notes')}</div>
+                </a>
+            `;
+        }).join('');
+    }
+
+    function renderCalendar() {
+        const statsMap = statsByDate();
+        const year = visibleMonth.getFullYear();
+        const month = visibleMonth.getMonth();
+        monthLabel.textContent = visibleMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        const firstOfMonth = new Date(year, month, 1);
+        const gridStart = new Date(firstOfMonth);
+        gridStart.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
+
+        let html = '';
+        for (let i = 0; i < 42; i += 1) {
+            const cellDate = new Date(gridStart);
+            cellDate.setDate(gridStart.getDate() + i);
+            const iso = toIso(cellDate);
+            const inMonth = cellDate.getMonth() === month;
+            const stats = statsMap.get(iso);
+            const tone = statusTone(iso, inMonth, statsMap);
+            html += `
+                <button type="button" class="calendar-day calendar-day-${tone}${inMonth ? '' : ' is-outside'}" data-date="${iso}">
+                    <span class="calendar-day-number">${cellDate.getDate()}</span>
+                    ${inMonth && stats && stats.total ? `<span class="calendar-day-count">${stats.total}</span>` : ''}
+                </button>
+            `;
+        }
+
+        daysContainer.innerHTML = html;
+        daysContainer.querySelectorAll('.calendar-day').forEach(function (button) {
+            button.addEventListener('click', function () {
+                selectedDate = new Date(`${this.dataset.date}T00:00:00`);
+                visibleMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                renderCalendar();
+                renderList();
+            });
+        });
+    }
+
+    prevBtn.addEventListener('click', function () {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+        renderCalendar();
+    });
+
+    nextBtn.addEventListener('click', function () {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+        renderCalendar();
+    });
+
+    filterButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            activeFilter = this.dataset.filter;
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            renderCalendar();
+            renderList();
+        });
+    });
+
+    renderCalendar();
+    renderList();
+});
+</script>
+
+{% endif %}
+
+{% endblock %}
+
+

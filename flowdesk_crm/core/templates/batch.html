@@ -1,0 +1,950 @@
+{% extends 'base.html' %}
+{% block title %}Batches{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Batches</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Batches</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#batchFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+                {% if request.user.userprofile.role != 'trainer' %}
+                <a href="{% url 'add_batch' %}" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Add Batch</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+
+            <!-- ================= CARD ================= -->
+            <div class="card stretch stretch-full">
+                <div class="card-body p-0">
+
+                    <!-- ================= SEARCH ================= -->
+                    <div class="d-flex align-items-center justify-content-between px-3 py-3">
+                        <form method="GET" class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold">Search:</label>
+                            <input type="text" name="search" value="{{ request.GET.search }}" class="form-control"
+                                placeholder="Search batches..." style="width:250px;height:38px;">
+                            <button type="submit" class="btn btn-light-brand" style="height:38px;">
+                                <i class="feather-search"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- ================= FILTER PANEL ================= -->
+                    <div class="collapse border-top px-3 py-3" id="batchFilterPanel">
+                        <form method="GET" action="{% url 'batch' %}">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Department</label>
+                                    <select name="department" class="form-control">
+                                        <option value="">All Departments</option>
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.id }}"
+                                            {% if request.GET.department == dept.id|stringformat:"s" %}
+                                                selected
+                                            {% endif %}>
+                                            {{ dept.department_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Course</label>
+                                    <select name="course" class="form-control">
+                                        <option value="">All Courses</option>
+                                        {% for course in courses %}
+                                        <option value="{{ course.id }}"
+                                            {% if request.GET.course == course.id|stringformat:"s" %}
+                                                selected
+                                            {% endif %}>
+                                            {{ course.course_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                                    <button class="btn btn-dark" type="submit">
+                                        Apply Filter
+                                    </button>
+                                    <a href="{% url 'batch' %}" class="btn btn-outline-secondary">
+                                        Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ================= BATCH LIST ================= -->
+                    <div class="px-3 py-3">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                            <span style="width:4px;height:22px;background:#4f46e5;border-radius:2px;"></span>
+                            <h5 style="margin:0;">Batch List</h5>
+                            <span class="badge bg-primary">{{ batches.count }} Batches</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead style="background:#f8fafc;">
+                                <tr class="text-muted" style="font-size:13px;font-weight:600;">
+                                    <th style="padding:16px;">#</th>
+                                    <th style="padding:16px;">Batch Name</th>
+                                    <th style="padding:16px;">Department</th>
+                                    <th style="padding:16px;">Course</th>
+                                    <th style="padding:16px;">Trainer</th>
+                                    <th style="padding:16px;">Duration</th>
+                                    <th style="padding:16px;">Time</th>
+                                    <th style="padding:16px;">Mode</th>
+                                    <th style="padding:16px;">Capacity</th>
+                                    <th style="padding:16px;">Status</th>
+                                    <th style="padding:16px;">Attendance</th>
+                                    <th style="padding:16px;text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for batch in batches %}
+                                <tr style="border-bottom:1px solid #e2e8f0;">
+                                    <td style="padding:16px;color:#64748b;font-size:14px;">{{ forloop.counter }}</td>
+                                    <td style="padding:16px;">
+                                        <div style="font-weight:600;color:#4f46e5;font-size:14px;cursor:pointer;"
+                                            onclick="openBatchStudents('{{ batch.id }}','{{ batch.batch_name }}')">
+                                            {{ batch.batch_name }}
+                                        </div>
+                                    </td>
+                                    <td style="padding:16px;">
+                                        <span
+                                            style="padding:6px 12px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:13px;font-weight:500;">
+                                            {{ batch.department.department_name }}
+                                        </span>
+                                    </td>
+                                    <td style="padding:16px;color:#475569;font-size:14px;">{{ batch.course.course_name }}</td>
+                                    <td style="padding:16px;">
+                                        <div style="display:flex;align-items:center;gap:8px;">
+                                            <div
+                                                style="width:32px;height:32px;background:#e0e7ff;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                                <i class="feather-user" style="font-size:14px;color:#4f46e5;"></i>
+                                            </div>
+                                            <span style="font-size:14px;color:#475569;">{{ batch.trainer.user.get_full_name|default:batch.trainer.user.username }}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding:16px;">
+                                        <div style="font-size:13px;color:#475569;">
+                                            {{ batch.start_date|date:"M d, Y" }}
+                                        </div>
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">
+                                            to {{ batch.end_date|date:"M d, Y" }}
+                                        </div>
+                                    </td>
+                                    <td style="padding:16px;">
+                                        <div style="font-size:13px;color:#475569;">
+                                            {{ batch.start_time|time:"h:i A" }}
+                                        </div>
+                                        {% if batch.end_time %}
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">
+                                            to {{ batch.end_time|time:"h:i A" }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding:16px;">
+                                        <span
+                                            style="padding:6px 12px;background:#dbeafe;color:#1e40af;border-radius:6px;font-size:13px;font-weight:500;">
+                                            {{ batch.mode }}
+                                        </span>
+                                    </td>
+                                    <td style="padding:16px;">
+                                        <div style="font-size:14px;color:#475569;font-weight:600;">
+                                            {{ batch.enrolled_count }}/{{ batch.no_of_students }}
+                                        </div>
+                                    </td>
+                                    <td style="padding:16px;">
+                                        {% if batch.status == 'Active' %}
+                                        <span
+                                            style="padding:6px 12px;background:#dcfce7;color:#166534;border-radius:6px;font-size:13px;font-weight:500;">
+                                            {{ batch.status }}
+                                        </span>
+                                        {% elif batch.status == 'Completed' %}
+                                        <span
+                                            style="padding:6px 12px;background:#e0e7ff;color:#4338ca;border-radius:6px;font-size:13px;font-weight:500;">
+                                            {{ batch.status }}
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            style="padding:6px 12px;background:#f1f5f9;color:#64748b;border-radius:6px;font-size:13px;font-weight:500;">
+                                            {{ batch.status }}
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding:16px;">
+                                        <div style="font-size:14px;color:#475569;font-weight:600;">
+                                            <a href="{% url 'mark_attendance' batch.id %}"
+                                                class="btn btn-sm btn-success">
+                                                Attendance
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td style="padding:16px;text-align:right;">
+                                        <div style="display:flex;gap:8px;justify-content:flex-end;">
+                                            <!-- View Students -->
+                                            <a href="{% url 'batch_students' batch.id %}"
+                                                style="width:36px;height:36px;border:1px solid #3b82f6;background:transparent;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#3b82f6;text-decoration:none;transition:all .2s ease;"
+                                                title="View Students"
+                                                onmouseover="this.style.background='#3b82f6';this.style.color='#fff';"
+                                                onmouseout="this.style.background='transparent';this.style.color='#3b82f6';">
+                                                <i class="feather-users" style="font-size:16px;"></i>
+                                            </a>
+
+                                            {% if request.user.userprofile.role != 'trainer' %}
+                                            <!-- Edit Button -->
+                                            <button type="button" data-bs-toggle="modal"
+                                                data-bs-target="#editModal{{ batch.id }}"
+                                                style="width:36px;height:36px;border:1px solid #8b5cf6;background:transparent;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#8b5cf6;transition:all .2s ease;"
+                                                onmouseover="this.style.background='#8b5cf6';this.style.color='#fff';"
+                                                onmouseout="this.style.background='transparent';this.style.color='#8b5cf6';">
+                                                <i class="feather-edit" style="font-size:16px;"></i>
+                                            </button>
+
+                                            <!-- Delete Form -->
+                                            <form method="post" action="{% url 'delete_batch' batch.id %}"
+                                                style="display:inline;margin:0;">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                    onclick="return confirm('Delete this batch? All enrolled students will be affected.');"
+                                                    style="width:36px;height:36px;border:1px solid #ef4444;background:transparent;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#ef4444;padding:0;transition:all .2s ease;"
+                                                    onmouseover="this.style.background='#ef4444';this.style.color='#fff';"
+                                                    onmouseout="this.style.background='transparent';this.style.color='#ef4444';">
+                                                    <i class="feather-trash-2" style="font-size:16px;"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Edit Modal -->
+                                <div class="modal fade" id="editModal{{ batch.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Edit Batch</h5>
+                                                <button type="button" class="btn-close"
+                                                    data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'edit_batch' batch.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Batch Name</label>
+                                                            <input type="text" name="batch_name" class="form-control"
+                                                                value="{{ batch.batch_name }}" required>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Department</label>
+                                                            <select name="department" class="form-control" required>
+                                                                <option value="">Select Department</option>
+                                                                {% for dept in departments %}
+                                                                <option value="{{ dept.id }}" {% if dept.id == batch.department.id %}selected{% endif %}>
+                                                                    {{ dept.department_name }}
+                                                                </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Course</label>
+                                                            <select name="course" class="form-control"
+                                                                onchange="calculateEditEndDate('{{ batch.id }}')"
+                                                                id="course_select_{{ batch.id }}" required>
+                                                                <option value="">Select Course</option>
+                                                                {% for course in courses %}
+                                                                <option value="{{ course.id }}" data-duration="{{ course.duration_months }}" {% if course.id == batch.course.id %}selected{% endif %}>
+                                                                    {{ course.course_name }} ({{ course.department.department_name }})
+                                                                </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Trainer</label>
+                                                            <select name="trainer" class="form-control" id="trainer_select_{{ batch.id }}" required>
+                                                                <option value="">Select Trainer</option>
+                                                                {% for trainer in trainers %}
+                                                                <option value="{{ trainer.id }}"
+                                                                    {% if trainer.id == batch.trainer.id %}
+                                                                        selected
+                                                                    {% endif %}>
+                                                                    {{ trainer.user.get_full_name|default:trainer.user.username }}
+                                                                </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                            <small class="form-text text-muted">Only trainers specialized in the selected department and course will be shown.</small>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Start Date</label>
+                                                            <input type="date" name="start_date"
+                                                                id="start_date_{{ batch.id }}" class="form-control"
+                                                                value="{{ batch.start_date|date:'Y-m-d' }}"
+                                                                onchange="calculateEditEndDate('{{ batch.id }}')"
+                                                                required>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">End Date</label>
+                                                            <input type="date" name="end_date"
+                                                                id="end_date_{{ batch.id }}"
+                                                                class="form-control"
+                                                                value="{{ batch.end_date|date:'Y-m-d' }}"
+                                                                readonly>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Start Time</label>
+                                                            <input type="time" name="start_time" class="form-control"
+                                                                value="{{ batch.start_time|time:'H:i' }}" required>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">End Time</label>
+                                                            <input type="time" name="end_time" class="form-control"
+                                                                value="{{ batch.end_time|time:'H:i'|default:'' }}">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Mode</label>
+                                                            <select name="mode" class="form-control" required>
+                                                                <option value="Online" {% if batch.mode == 'Online' %}selected{% endif %}>Online</option>
+                                                                <option value="Offline" {% if batch.mode == 'Offline' %}selected{% endif %}>Offline</option>
+                                                                <option value="Hybrid" {% if batch.mode == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Max Students</label>
+                                                            <input type="number" name="max_students"
+                                                                class="form-control" value="{{ batch.no_of_students }}"
+                                                                min="1" max="100">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Status</label>
+                                                            <select name="status" class="form-control" required>
+                                                                <option value="Active" {% if batch.status == 'Active' %}selected{% endif %}>Active</option>
+                                                                <option value="Inactive" {% if batch.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                                                                <option value="Completed" {% if batch.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted py-4">
+                                        No batches available
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ================= END CARD ================= -->
+
+        </div>
+    </div>
+</div>
+
+<!--batch modal-->
+<div class="modal fade batch-students-modal" id="batchStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div class="d-flex align-items-start gap-2">
+                    <span class="batch-modal-icon"><i class="feather-users"></i></span>
+                    <div>
+                        <h5 class="modal-title mb-1" id="batchTitle">Batch Students</h5>
+                        <p class="batch-modal-subtitle mb-0">Manage batch allocation with seat control.</p>
+                    </div>
+                </div>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="batch-capacity-summary mb-3">
+                    <div class="batch-capacity-item">
+                        <span class="capacity-label">Capacity</span>
+                        <span class="capacity-value" id="cap"></span>
+                    </div>
+                    <div class="batch-capacity-item">
+                        <span class="capacity-label">Enrolled</span>
+                        <span class="capacity-value" id="cur"></span>
+                    </div>
+                    <div class="batch-capacity-item">
+                        <span class="capacity-label">Seats Left</span>
+                        <span class="capacity-value text-success" id="left"></span>
+                    </div>
+                </div>
+                <div class="row g-3">
+
+                    <!-- AVAILABLE STUDENTS -->
+                    <div class="col-md-6 student-column">
+                        <h6 class="student-column-title">Available Students</h6>
+
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-success student-bulk-action"
+                                onclick="addSelectedStudents()"
+                                {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>
+                                Add Selected <i class="feather-arrow-right"></i>
+                            </button>
+                        </div>
+
+                        <div id="availableStudents" class="student-list"></div>
+                    </div>
+
+                    <!-- ASSIGNED STUDENTS -->
+                    <div class="col-md-6 student-column">
+                        <h6 class="student-column-title">Batch Students</h6>
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-danger student-bulk-action"
+                                onclick="removeSelectedStudents()"
+                                {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>
+                                <i class="feather-arrow-left"></i> Remove Selected
+                            </button>
+                        </div>
+                        <div id="batchStudents" class="student-list"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .modal-open .nxl-container,
+    .modal-open .nxl-content {
+        filter: none !important;
+    }
+
+    #batchStudentModal .modal-content {
+        border: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    }
+
+    #batchStudentModal .modal-header {
+        border-bottom: 1px solid #e2e8f0;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        padding: 18px 22px;
+    }
+
+    #batchStudentModal .modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+        letter-spacing: -0.01em;
+    }
+
+    #batchStudentModal .batch-modal-subtitle {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    #batchStudentModal .batch-modal-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: #e0e7ff;
+        color: #4f46e5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    #batchStudentModal .modal-body {
+        padding: 20px 22px 22px;
+        background: #ffffff;
+    }
+
+    #batchStudentModal .batch-capacity-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    #batchStudentModal .batch-capacity-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 10px 12px;
+    }
+
+    #batchStudentModal .capacity-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+    }
+
+    #batchStudentModal .capacity-value {
+        display: block;
+        font-size: 24px;
+        line-height: 1;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    #batchStudentModal .student-column {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 14px;
+    }
+
+    #batchStudentModal .student-column-title {
+        margin: 0;
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 1.05rem;
+    }
+
+    #batchStudentModal .student-bulk-action {
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 7px 12px;
+        margin-top: 10px;
+    }
+
+    #batchStudentModal .student-list {
+        margin-top: 10px;
+        max-height: 330px;
+        overflow: auto;
+        padding-right: 2px;
+    }
+
+    #batchStudentModal #availableStudents>div,
+    #batchStudentModal #batchStudents>div {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        background: #ffffff;
+        padding: 10px 12px !important;
+        margin-bottom: 10px !important;
+        transition: all 0.2s ease;
+    }
+
+    #batchStudentModal #availableStudents>div:hover,
+    #batchStudentModal #batchStudents>div:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+    }
+
+    #batchStudentModal #availableStudents label,
+    #batchStudentModal #batchStudents label {
+        color: #334155;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    #batchStudentModal #availableStudents input[type="checkbox"],
+    #batchStudentModal #batchStudents input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #4f46e5;
+    }
+
+    #batchStudentModal #availableStudents .btn,
+    #batchStudentModal #batchStudents .btn {
+        min-width: 82px;
+        border-radius: 8px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    @media (max-width: 991.98px) {
+        #batchStudentModal .batch-capacity-summary {
+            grid-template-columns: 1fr;
+        }
+
+        #batchStudentModal .modal-body {
+            padding: 16px;
+        }
+    }
+</style>
+
+<script>
+
+    const deptEl = document.getElementById('department_select');
+    if (deptEl) {
+        deptEl.addEventListener('change', function () {
+            const deptId = this.value;
+            const courseOptions = document.querySelectorAll('#course_select option[data-dept]');
+
+            courseOptions.forEach(option => {
+                option.style.display = (deptId === '' || option.dataset.dept === deptId)
+                    ? 'block' : 'none';
+            });
+
+            const selectedCourse = document.getElementById('course_select');
+            if (selectedCourse) {
+                const selectedOption = selectedCourse.options[selectedCourse.selectedIndex];
+                if (selectedOption?.dataset?.dept && selectedOption.dataset.dept !== deptId) {
+                    selectedCourse.value = '';
+                }
+            }
+        });
+    }
+
+</script>
+<script>
+
+    let batchModal = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const modalEl = document.getElementById("batchStudentModal");
+        if (modalEl) {
+            batchModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+        }
+    });
+
+    let currentBatchId = null;
+
+    function openBatchStudents(batchId, batchName) {
+        currentBatchId = batchId;
+
+        document.getElementById("batchTitle").innerText =
+            batchName + " - Students";
+
+        fetch(`/get-batch-students/${batchId}/`)
+            .then(res => res.json())
+            .then(data => {
+
+                ////////////////////////////////
+                // SHOW CAPACITY
+                ////////////////////////////////
+                document.getElementById("cap").innerText = data.capacity;
+                document.getElementById("cur").innerText = data.current;
+                document.getElementById("left").innerText = data.seats_left;
+
+                if (data.seats_left <= 0) {
+                    document.getElementById("left").style.color = "red";
+                } else {
+                    document.getElementById("left").style.color = "green";
+                }
+
+                ////////////////////////////////
+                // AVAILABLE
+                ////////////////////////////////
+                let availableHTML = "";
+                data.available.forEach(s => {
+                    availableHTML += `
+            <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+                <label class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="available-check" value="${s.id}" {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>
+                    ${s.name}
+                </label>
+                <button class="btn btn-sm btn-success"
+                    onclick="addSingle(${s.id})" {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>Add</button>
+            </div>`;
+                });
+
+                let blockedHTML = "";
+                (data.blocked || []).forEach(s => {
+                    blockedHTML += `
+            <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2 bg-light">
+                <div class="flex-grow-1">
+                    <label class="d-flex align-items-start gap-2">
+                        <input type="checkbox" class="available-check" value="${s.id}" {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>
+                        <span>
+                            <span class="d-inline-flex align-items-center gap-2">
+                                <span>${s.name}</span>
+                                <span class="badge bg-soft-warning text-warning">Advance Pending</span>
+                            </span>
+                            <small class="d-block text-warning mt-1">${s.reason}</small>
+                        </span>
+                    </label>
+                </div>
+                <button class="btn btn-sm btn-outline-warning"
+                    onclick="addSingle(${s.id})" {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>Add</button>
+            </div>`;
+                });
+
+                ////////////////////////////////
+                // ASSIGNED
+                ////////////////////////////////
+                let assignedHTML = "";
+                data.assigned.forEach(s => {
+                    assignedHTML += `
+            <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+                <label class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="assigned-check" value="${s.id}" {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>
+                    ${s.name}
+                </label>
+                <button class="btn btn-sm btn-danger"
+                    onclick="removeSingle(${s.id})" {% if request.user.userprofile.role == 'trainer' %}disabled{% endif %}>Remove</button>
+            </div>`;
+                });
+
+                document.getElementById("availableStudents").innerHTML =
+                    (availableHTML + blockedHTML) || "<p class='text-muted'>No available students</p>";
+
+                document.getElementById("batchStudents").innerHTML =
+                    assignedHTML || "<p class='text-muted'>No students in batch</p>";
+
+                if (batchModal) {
+                    batchModal.show();
+                }
+
+            });
+    }
+
+    //////////////////////////////////////////////////////////
+    // ADD SINGLE
+    //////////////////////////////////////////////////////////
+    function addSingle(studentId) {
+        fetch("/assign-single-student-batch/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `student_id=${studentId}&batch_id=${currentBatchId}`
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    openBatchStudents(currentBatchId, "");
+                    location.reload();
+                } else {
+                    alert(data.error || "Batch Full 🚫");
+                }
+            });
+    }
+
+    //////////////////////////////////////////////////////////
+    // REMOVE SINGLE
+    //////////////////////////////////////////////////////////
+    function removeSingle(studentId) {
+        fetch("/remove-student-batch/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `student_id=${studentId}&batch_id=${currentBatchId}`
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const batchTitle = document.getElementById("batchTitle").innerText;
+                    openBatchStudents(currentBatchId, batchTitle.split(" - ")[0]);
+                    location.reload();
+                }
+            });
+    }
+
+    //////////////////////////////////////////////////////////
+    // ADD MULTIPLE
+    //////////////////////////////////////////////////////////
+    function addSelectedStudents() {
+        let ids = [];
+        document.querySelectorAll(".available-check:checked")
+            .forEach(cb => ids.push(cb.value));
+
+        if (ids.length === 0) {
+            alert("Select students");
+            return;
+        }
+
+        fetch("/assign-multiple-students-batch/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `student_ids=${ids.join(",")}&batch_id=${currentBatchId}`
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    openBatchStudents(currentBatchId, "");
+                    location.reload();
+                } else {
+                    alert(data.error || "Batch Full 🚫");
+                }
+            });
+    }
+
+    //////////////////////////////////////////////////////////
+    // REMOVE MULTIPLE
+    //////////////////////////////////////////////////////////
+    function removeSelectedStudents() {
+        let ids = [];
+        document.querySelectorAll(".assigned-check:checked")
+            .forEach(cb => ids.push(cb.value));
+
+        if (ids.length === 0) {
+            alert("Select students");
+            return;
+        }
+
+        fetch("/remove-multiple-students-batch/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `student_ids=${ids.join(",")}&batch_id=${currentBatchId}`
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const batchTitle = document.getElementById("batchTitle").innerText;
+                    openBatchStudents(currentBatchId, batchTitle.split(" - ")[0]);
+                    location.reload();
+                }
+            });
+    }
+
+    //////////////////////////////////////////////////////////
+    // BACKDROP FIX (BLUE SCREEN)
+    //////////////////////////////////////////////////////////
+    const batchModalEl = document.getElementById("batchStudentModal");
+
+    batchModalEl.addEventListener("hidden.bs.modal", function () {
+        document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+        document.body.classList.remove("modal-open");
+        document.body.style = "";
+    });
+
+    // AUTO CALCULATION FOR EDIT MODALS
+    function calculateEditEndDate(batchId) {
+        const startDateVal = document.getElementById("start_date_" + batchId).value;
+        const courseSelect = document.getElementById("course_select_" + batchId);
+        if (!startDateVal || !courseSelect || courseSelect.value === "") return;
+
+        const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+        const duration = selectedOption.getAttribute("data-duration");
+        if (!duration) return;
+
+        let start = new Date(startDateVal);
+        start.setMonth(start.getMonth() + parseInt(duration));
+
+        const yyyy = start.getFullYear();
+        const mm = String(start.getMonth() + 1).padStart(2, '0');
+        const dd = String(start.getDate()).padStart(2, '0');
+
+        const endDate = `${yyyy}-${mm}-${dd}`;
+        document.getElementById("end_date_" + batchId).value = endDate;
+    }
+</script>
+
+<script>
+    // Auto-show batch selection modal when coming from Mark Attendance link
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'mark_attendance') {
+            // Remove any stale modal from previous render
+            const existingModal = document.getElementById('selectBatchModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Show a simple modal to select batch
+            const modalWrapper = document.createElement('div');
+            modalWrapper.innerHTML = `
+            <div class="modal fade" id="selectBatchModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius: 12px;">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white;">
+                            <h5 class="modal-title"><i class="feather-check-square me-2"></i>Batch for Attendance</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" style="padding: 24px;">
+                            <label class="form-label" style="font-weight: 600; color: #334155;">Choose a batch:</label>
+                            <select id="batchSelectDropdown" class="form-select" style="border-radius: 8px; padding: 10px;">
+                                <option value="">-- Select Batch --</option>
+                                {% for batch in batches %}
+                                <option value="{{ batch.id }}">{{ batch.batch_name }} - {{ batch.course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="goToAttendance()" style="border-radius: 8px;">
+                                <i class="feather-arrow-right me-1"></i>Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            document.body.appendChild(modalWrapper.firstElementChild);
+            const selectModal = new bootstrap.Modal(document.getElementById('selectBatchModal'));
+            selectModal.show();
+
+            // Clean URL after showing modal
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+
+    function goToAttendance() {
+        const batchId = document.getElementById('batchSelectDropdown').value;
+        if (batchId) {
+            window.location.href = `/attendance/${batchId}/`;
+        } else {
+            alert('Please select a batch');
+        }
+    }
+</script>
+
+{% endblock %}
+
+
+

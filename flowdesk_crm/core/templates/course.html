@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% block title %}Courses{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Courses</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Courses</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+
+                <!-- Add Course Section -->
+                <div class="card-body">
+                    <div class="mb-5 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 me-4">
+                            <span class="d-block mb-2">Add Course :</span>
+                            <span class="fs-12 fw-normal text-muted text-truncate-1-line">Create a new course</span>
+                        </h5>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="departmentSelect" class="fw-semibold">Department: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="department" id="departmentSelect" class="form-control" required>
+                                    <option value="">Select Department</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="courseNameInput" class="fw-semibold">Course Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-book"></i></div>
+                                    <input type="text" name="course_name" id="courseNameInput" class="form-control" placeholder="Enter course name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="feesInput" class="fw-semibold">Fees (₹): </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-dollar-sign"></i></div>
+                                    <input type="number" name="fees" id="feesInput" class="form-control" placeholder="Enter fees" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="advancePaymentInput" class="fw-semibold">Advance Payment (₹): </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-credit-card"></i></div>
+                                    <input type="number" name="advance_payment_amount" id="advancePaymentInput" class="form-control" placeholder="Enter advance amount" min="0" step="0.01" value="1000.00">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="durationInput" class="fw-semibold">Duration (Months): </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-clock"></i></div>
+                                    <input type="number" name="duration_months" id="durationInput" class="form-control" placeholder="Enter duration" min="1" max="24" value="3">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Enable Installments: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="installment_enabled" id="installmentEnabled">
+                                    <label class="form-check-label" for="installmentEnabled">Allow payment in installments</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="installmentFields" style="display:none;">
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="installmentCount" class="fw-semibold">Number of Installments: </label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-hash"></i></div>
+                                        <input type="number" name="installment_count" id="installmentCount" class="form-control" placeholder="e.g., 2, 3, 4" min="2" max="12" value="2">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="installmentInterval" class="fw-semibold">Interval (Days): </label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                        <input type="number" name="installment_interval_days" id="installmentInterval" class="form-control" placeholder="Days between installments" min="7" max="90" value="30">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-plus-circle me-1"></i> Add Course
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr class="mt-0">
+
+                <!-- Course List Section -->
+                <div class="card-body">
+                    <div class="mb-5 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 me-4">
+                            <span class="d-block mb-2">Course List :</span>
+                            <span class="fs-12 fw-normal text-muted text-truncate-1-line">Manage all courses</span>
+                        </h5>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>#</th>
+                                    <th>Department</th>
+                                    <th>Course Name</th>
+                                    <th>Fees</th>
+                                    <th>Advance</th>
+                                    <th>Duration</th>
+                                    <th>Installments</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td style="font-weight:600;">{{ course.department.department_name }}</td>
+                                    <td>{{ course.course_name }}</td>
+                                    <td>
+                                        {% if course.fees %}
+                                            <span class="badge bg-success">₹{{ course.fees }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">₹{{ course.advance_payment_amount }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ course.duration_months }} months</span>
+                                    </td>
+                                    <td>
+                                        {% if course.installment_enabled %}
+                                            <span class="badge bg-primary">{{ course.installment_count }}x ({{ course.installment_interval_days }}d)</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary edit-course-btn" data-id="{{ course.id }}" data-name="{{ course.course_name }}" data-dept="{{ course.department.id }}" data-fees="{{ course.fees|default:'' }}" data-advance="{{ course.advance_payment_amount }}" data-duration="{{ course.duration_months }}" data-installment-enabled="{{ course.installment_enabled|yesno:'true,false' }}" data-installment-count="{{ course.installment_count }}" data-installment-interval="{{ course.installment_interval_days }}" style="width:36px;height:36px;padding:0;">
+                                            <i class="feather-edit"></i>
+                                        </button>
+                                        <form method="post" action="{% url 'delete_course' course.id %}" style="display:inline;margin:0;">
+                                            {% csrf_token %}
+                                            <button type="submit" onclick="return confirm('Delete this course?');" class="btn btn-sm btn-outline-danger" style="width:36px;height:36px;padding:0;">
+                                                <i class="feather-trash-2" style="font-size:16px;"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        No courses available
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Course Modal -->
+<div class="modal fade" id="editCourseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-semibold">Edit Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'edit_course' %}" id="editCourseForm">
+                {% csrf_token %}
+                <input type="hidden" name="course_id" id="edit_course_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_department" class="form-label">Department <span class="text-danger">*</span></label>
+                        <select name="department" id="edit_department" class="form-control" required>
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_course_name" class="form-label">Course Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <div class="input-group-text"><i class="feather-book"></i></div>
+                            <input type="text" name="course_name" id="edit_course_name" class="form-control" placeholder="Enter course name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_fees" class="form-label">Fees (₹)</label>
+                        <div class="input-group">
+                            <div class="input-group-text"><i class="feather-dollar-sign"></i></div>
+                            <input type="number" name="fees" id="edit_fees" class="form-control" placeholder="Enter fees" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_advance_payment_amount" class="form-label">Advance Payment (₹)</label>
+                        <div class="input-group">
+                            <div class="input-group-text"><i class="feather-credit-card"></i></div>
+                            <input type="number" name="advance_payment_amount" id="edit_advance_payment_amount" class="form-control" placeholder="Enter advance amount" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_duration" class="form-label">Duration (Months)</label>
+                        <div class="input-group">
+                            <div class="input-group-text"><i class="feather-clock"></i></div>
+                            <input type="number" name="duration_months" id="edit_duration" class="form-control" placeholder="Enter duration" min="1" max="24">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="installment_enabled" id="edit_installment_enabled">
+                            <label class="form-check-label" for="edit_installment_enabled">Enable Installments</label>
+                        </div>
+                    </div>
+                    <div id="editInstallmentFields" style="display:none;">
+                        <div class="mb-3">
+                            <label for="edit_installment_count" class="form-label">Number of Installments</label>
+                            <input type="number" name="installment_count" id="edit_installment_count" class="form-control" min="2" max="12" value="2">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_installment_interval" class="form-label">Interval (Days)</label>
+                            <input type="number" name="installment_interval_days" id="edit_installment_interval" class="form-control" min="7" max="90" value="30">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="feather-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('editCourseModal');
+    let modal = modalElement ? new bootstrap.Modal(modalElement) : null;
+
+    const installmentEnabled = document.getElementById('installmentEnabled');
+    const installmentFields = document.getElementById('installmentFields');
+    const editInstallmentEnabled = document.getElementById('edit_installment_enabled');
+    const editInstallmentFields = document.getElementById('editInstallmentFields');
+
+    if (installmentEnabled && installmentFields) {
+        installmentEnabled.addEventListener('change', function() {
+            installmentFields.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    if (editInstallmentEnabled && editInstallmentFields) {
+        editInstallmentEnabled.addEventListener('change', function() {
+            editInstallmentFields.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    document.querySelectorAll('.edit-course-btn').forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('edit_course_id').value = this.dataset.id;
+            document.getElementById('edit_course_name').value = this.dataset.name;
+            document.getElementById('edit_department').value = this.dataset.dept;
+            document.getElementById('edit_fees').value = this.dataset.fees || '';
+            document.getElementById('edit_advance_payment_amount').value = this.dataset.advance || '1000.00';
+            document.getElementById('edit_duration').value = this.dataset.duration || '';
+            
+            const installmentEnabled = this.dataset.installmentEnabled === 'true';
+            document.getElementById('edit_installment_enabled').checked = installmentEnabled;
+            document.getElementById('edit_installment_count').value = this.dataset.installmentCount || '2';
+            document.getElementById('edit_installment_interval').value = this.dataset.installmentInterval || '30';
+            editInstallmentFields.style.display = installmentEnabled ? 'block' : 'none';
+            
+            if (modal) modal.show();
+        });
+    });
+});
+</script>
+
+
+
+
+{% endblock %}

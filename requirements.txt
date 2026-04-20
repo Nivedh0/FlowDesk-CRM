@@ -1,0 +1,14 @@
+# Core framework
+Django==5.2.1
+
+# MySQL database adapter
+mysqlclient==2.2.7
+
+# Excel import/export
+openpyxl==3.1.5
+
+# PDF generation
+reportlab==4.4.10
+
+# Environment variable management
+python-dotenv==1.1.0

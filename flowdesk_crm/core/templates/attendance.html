@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Mark Attendance</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'batch' %}">Batches</a></li>
+            <li class="breadcrumb-item">Attendance</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .attendance-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .attendance-card {
+        border: 1px solid #dbe4f0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    .attendance-table {
+        margin: 0;
+        table-layout: fixed;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+        vertical-align: middle;
+    }
+
+    .attendance-table thead th {
+        background: #0f2b63;
+        color: #fff;
+        border-color: #0f2b63;
+        font-weight: 600;
+    }
+
+    .attendance-table th:nth-child(1),
+    .attendance-table td:nth-child(1) {
+        width: 28%;
+    }
+
+    .attendance-table th:nth-child(2),
+    .attendance-table td:nth-child(2) {
+        width: 32%;
+    }
+
+    .attendance-table th:nth-child(3),
+    .attendance-table td:nth-child(3) {
+        width: 16%;
+    }
+
+    .attendance-table th:nth-child(4),
+    .attendance-table td:nth-child(4) {
+        width: 24%;
+    }
+
+    .status-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .status-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #d0d7e2;
+        border-radius: 999px;
+        padding: 4px 10px;
+        line-height: 1;
+        cursor: pointer;
+        background: #fff;
+        min-width: 92px;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-option input {
+        margin: 0;
+    }
+
+    .status-option.active {
+        border-color: #2563eb;
+        background: #eaf1ff;
+        color: #1e3a8a;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="attendance-wrap">
+    <h3 class="mb-3">Mark Attendance - {{ batch.batch_name }}</h3>
+
+    <form method="POST" class="attendance-card p-3 p-md-4">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label>Date</label>
+            <input type="date" name="date" value="{{ selected_date }}" required class="form-control" onchange="window.location.href='?date=' + this.value">
+        </div>
+
+        <table class="table table-bordered attendance-table">
+            <thead class="table-light">
+                <tr>
+                    <th>Student</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in students_with_attendance %}
+                <tr>
+                    <td>{{ item.student.student_name }}</td>
+
+                    <td>
+                        <input type="hidden" name="status_{{ item.student.id }}" value="{{ item.status }}" class="status-hidden">
+                        <div class="status-group">
+                            <label class="mb-0 status-option {% if item.status == 'present' %}active{% endif %}">
+                                <input type="checkbox" class="status-check" data-status="present" {% if item.status == 'present' %}checked{% endif %}> Present
+                            </label>
+                            <label class="mb-0 status-option {% if item.status == 'absent' %}active{% endif %}">
+                                <input type="checkbox" class="status-check" data-status="absent" {% if item.status == 'absent' %}checked{% endif %}> Absent
+                            </label>
+                            <label class="mb-0 status-option {% if item.status == 'leave' %}active{% endif %}">
+                                <input type="checkbox" class="status-check" data-status="leave" {% if item.status == 'leave' %}checked{% endif %}> Leave
+                            </label>
+                        </div>
+                    </td>
+
+                    <td>
+                        <select name="duration_{{ item.student.id }}" class="form-control">
+                            <option value="full" {% if item.duration == 'full' %}selected{% endif %}>Full Day</option>
+                            <option value="half" {% if item.duration == 'half' %}selected{% endif %}>Half Day</option>
+                        </select>
+                    </td>
+
+                    <td>
+                        <input type="text" name="remarks_{{ item.student.id }}" class="form-control" value="{{ item.remarks }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button class="btn btn-primary">Save Attendance</button>
+
+    </form>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach((row) => {
+            const hiddenStatus = row.querySelector('.status-hidden');
+            const checks = row.querySelectorAll('.status-check');
+            if (!hiddenStatus || checks.length === 0) return;
+
+            function refreshActive() {
+                checks.forEach((check) => {
+                    const label = check.closest('.status-option');
+                    if (label) {
+                        label.classList.toggle('active', check.checked);
+                    }
+                });
+            }
+
+            checks.forEach((check) => {
+                check.addEventListener('change', function () {
+                    checks.forEach((other) => {
+                        if (other !== this) other.checked = false;
+                    });
+
+                    if (!this.checked) {
+                        this.checked = true;
+                    }
+
+                    hiddenStatus.value = this.dataset.status;
+                    refreshActive();
+                });
+            });
+
+            refreshActive();
+        });
+    })();
+</script>
+
+{% endblock %}

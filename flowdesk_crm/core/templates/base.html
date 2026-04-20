@@ -1,0 +1,1817 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zxx">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <meta name="keyword" content="" />
+    <meta name="author" content="flexilecode" />
+
+    <!--! BEGIN: Apps Title-->
+    <title>{% block title %}FlowDesk{% endblock %}</title>
+    <!--! END: Apps Title-->
+
+    <link rel="stylesheet" href="{% static 'css/crm-table.css' %}">
+    <link rel="shortcut icon" type="image/x-icon"
+          href="{% static 'assets/images/flowicon.ico' %}">
+    <!--! END: Favicon-->
+
+    <!--! BEGIN: Bootstrap CSS-->
+    <link rel="stylesheet"
+          href="{% static 'assets/css/bootstrap.min.css' %}">
+    <!--! END: Bootstrap CSS-->
+
+    <!--! BEGIN: Vendors CSS-->
+    <link rel="stylesheet"
+          href="{% static 'assets/vendors/css/vendors.min.css' %}">
+    <link rel="stylesheet"
+          href="{% static 'assets/vendors/css/daterangepicker.min.css' %}">
+    <!--! END: Vendors CSS-->
+
+    <!--! BEGIN: Theme CSS-->
+    <link rel="stylesheet"
+          href="{% static 'assets/css/theme.min.css' %}">
+    <!--! END: Theme CSS-->
+
+    <style>
+
+        .modal-open .nxl-container,
+        .modal-open .nxl-content {
+            filter: none !important;
+        }
+
+
+        .main-content .alert {
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #94a3b8;
+            background: #f8fafc;
+            color: #334155;
+            border-radius: 10px;
+            padding: 0.72rem 0.95rem;
+            box-shadow: none;
+        }
+
+        .main-content .alert.alert-success {
+            border-left-color: #86efac;
+            background: #f6fef9;
+            color: #14532d;
+        }
+
+        .main-content .alert.alert-info {
+            border-left-color: #93c5fd;
+            background: #f7fbff;
+            color: #1e3a8a;
+        }
+
+        .main-content .alert.alert-warning {
+            border-left-color: #fcd34d;
+            background: #fffcf4;
+            color: #78350f;
+        }
+
+        .main-content .alert.alert-danger {
+            border-left-color: #fda4af;
+            background: #fff7f8;
+            color: #881337;
+        }
+
+        .main-content .alert .btn-close {
+            opacity: 0.5;
+            transform: scale(0.85);
+        }
+
+        .main-content .alert .btn-close:hover {
+            opacity: 0.85;
+        }
+
+        @media print {
+            .nxl-content > .alert,
+            .nxl-content > [role="alert"] {
+                display: none !important;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            html.sidebar-hover-hide {
+                --fd-sidebar-width: 280px;
+                --fd-sidebar-peek: 50px;
+            }
+
+            html.sidebar-hover-hide .nxl-navigation {
+                transform: translateX(calc(-1 * (var(--fd-sidebar-width) - var(--fd-sidebar-peek))));
+                transition: transform 0.22s ease-in-out, box-shadow 0.22s ease-in-out;
+                z-index: 1040;
+            }
+
+            html.sidebar-hover-hide .nxl-navigation .m-header {
+                transform: translateX(calc(var(--fd-sidebar-width) - var(--fd-sidebar-peek)));
+                transition: transform 0.22s ease-in-out;
+            }
+
+            html.sidebar-hover-hide .nxl-navigation:hover {
+                transform: translateX(0);
+                box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+            }
+
+            html.sidebar-hover-hide .nxl-navigation:hover .m-header {
+                transform: translateX(0);
+            }
+
+            html.sidebar-hover-hide .nxl-navigation:hover ~ .nxl-header {
+                left: var(--fd-sidebar-width) !important;
+            }
+
+            html.sidebar-hover-hide .nxl-navigation:hover ~ .nxl-container {
+                margin-left: var(--fd-sidebar-width);
+            }
+
+            html.sidebar-hover-hide .nxl-navigation:hover ~ .nxl-container .page-header {
+                left: var(--fd-sidebar-width) !important;
+            }
+
+            html.sidebar-hover-hide .nxl-container {
+                margin-left: var(--fd-sidebar-peek);
+                transition: margin-left 0.22s ease-in-out;
+            }
+
+            html.sidebar-hover-hide .nxl-header {
+                left: var(--fd-sidebar-peek) !important;
+                transition: left 0.22s ease-in-out;
+            }
+
+            html.sidebar-hover-hide .page-header {
+                left: var(--fd-sidebar-peek);
+                transition: left 0.22s ease-in-out;
+            }
+
+            html.sidebar-hover-hide .nxl-navigation-toggle {
+                display: none !important;
+            }
+        }
+
+        /* Dark mode hardening for custom page-level styles and inline colors */
+        html.app-skin-dark {
+            --fd-dark-surface-0: #0f172a;
+            --fd-dark-surface-1: #121a2d;
+            --fd-dark-surface-2: #1c2438;
+            --fd-dark-border: #1b2436;
+            --fd-dark-text: #e2e8f0;
+            --fd-dark-muted: #94a3b8;
+            --fd-dark-focus: rgba(52, 84, 209, 0.25);
+        }
+
+        html.app-skin-dark .main-content .alert {
+            border-color: var(--fd-dark-border) !important;
+            background: var(--fd-dark-surface-2) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .main-content .alert.alert-success {
+            background: rgba(23, 198, 102, 0.12) !important;
+            color: #86efac !important;
+            border-left-color: #17c666 !important;
+        }
+
+        html.app-skin-dark .main-content .alert.alert-info {
+            background: rgba(61, 199, 190, 0.12) !important;
+            color: #7dd3fc !important;
+            border-left-color: #3dc7be !important;
+        }
+
+        html.app-skin-dark .main-content .alert.alert-warning {
+            background: rgba(255, 162, 29, 0.12) !important;
+            color: #fcd34d !important;
+            border-left-color: #ffa21d !important;
+        }
+
+        html.app-skin-dark .main-content .alert.alert-danger {
+            background: rgba(234, 77, 77, 0.12) !important;
+            color: #fda4af !important;
+            border-left-color: #ea4d4d !important;
+        }
+
+        html.app-skin-dark .table-light,
+        html.app-skin-dark .table-light > th,
+        html.app-skin-dark .table-light > td {
+            color: var(--fd-dark-text) !important;
+            background-color: var(--fd-dark-surface-2) !important;
+        }
+
+        /* Dropdown controls (select) + open menu surfaces */
+        html.app-skin-dark .nxl-content select,
+        html.app-skin-dark .nxl-content .form-select,
+        html.app-skin-dark .nxl-content select.form-control,
+        html.app-skin-dark .nxl-content .status-select {
+            background-color: var(--fd-dark-surface-1) !important;
+            color: var(--fd-dark-text) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .nxl-content select:focus,
+        html.app-skin-dark .nxl-content .form-select:focus,
+        html.app-skin-dark .nxl-content select.form-control:focus,
+        html.app-skin-dark .nxl-content .status-select:focus {
+            border-color: #3454d1 !important;
+            box-shadow: 0 0 0 0.2rem var(--fd-dark-focus) !important;
+        }
+
+        html.app-skin-dark .nxl-content select option,
+        html.app-skin-dark .nxl-content select optgroup {
+            background-color: var(--fd-dark-surface-0) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-content .dropdown-menu,
+        html.app-skin-dark .nxl-content .dropdown-menu.show,
+        html.app-skin-dark .nxl-content .select2-dropdown,
+        html.app-skin-dark .nxl-content .select2-container--bootstrap-5 .select2-dropdown,
+        html.app-skin-dark .nxl-content .select2-container--default .select2-dropdown {
+            background-color: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-content .dropdown-item,
+        html.app-skin-dark .nxl-content .select2-results__option {
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-content .dropdown-item:hover,
+        html.app-skin-dark .nxl-content .dropdown-item:focus,
+        html.app-skin-dark .nxl-content .dropdown-item.active,
+        html.app-skin-dark .nxl-content .select2-results__option--highlighted {
+            background: var(--fd-dark-surface-2) !important;
+            color: #ffffff !important;
+        }
+
+        /* Strong table header override for custom/inline page tables */
+        html.app-skin-dark .nxl-content table thead th,
+        html.app-skin-dark .nxl-content .table thead th,
+        html.app-skin-dark .nxl-content thead.table-light th,
+        html.app-skin-dark .nxl-content .table > thead > tr > th {
+            background: var(--fd-dark-surface-2) !important;
+            color: var(--fd-dark-text) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .nxl-content .table thead th.text-muted,
+        html.app-skin-dark .nxl-content table thead th.text-muted {
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-content [style*="background:#fff"],
+        html.app-skin-dark .nxl-content [style*="background: #fff"],
+        html.app-skin-dark .nxl-content [style*="background:#ffffff"],
+        html.app-skin-dark .nxl-content [style*="background: #ffffff"],
+        html.app-skin-dark .nxl-content [style*="background-color:#fff"],
+        html.app-skin-dark .nxl-content [style*="background-color: #fff"],
+        html.app-skin-dark .nxl-content [style*="background-color:#ffffff"],
+        html.app-skin-dark .nxl-content [style*="background-color: #ffffff"] {
+            background: var(--fd-dark-surface-1) !important;
+        }
+
+        html.app-skin-dark .nxl-content [style*="#f8fafc"],
+        html.app-skin-dark .nxl-content [style*="#f9fafb"],
+        html.app-skin-dark .nxl-content [style*="#f1f5f9"],
+        html.app-skin-dark .nxl-content [style*="#f8fbff"],
+        html.app-skin-dark .nxl-content [style*="#f8f9fa"] {
+            background: var(--fd-dark-surface-2) !important;
+        }
+
+        html.app-skin-dark .nxl-content [style*="#e2e8f0"],
+        html.app-skin-dark .nxl-content [style*="#e5e7eb"],
+        html.app-skin-dark .nxl-content [style*="#dbe3ef"],
+        html.app-skin-dark .nxl-content [style*="#d9e2ef"],
+        html.app-skin-dark .nxl-content [style*="#e6edf7"] {
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .nxl-content [style*="color:#1e293b"],
+        html.app-skin-dark .nxl-content [style*="color: #1e293b"],
+        html.app-skin-dark .nxl-content [style*="color:#334155"],
+        html.app-skin-dark .nxl-content [style*="color: #334155"],
+        html.app-skin-dark .nxl-content [style*="color:#475569"],
+        html.app-skin-dark .nxl-content [style*="color: #475569"],
+        html.app-skin-dark .nxl-content [style*="color:#64748b"],
+        html.app-skin-dark .nxl-content [style*="color: #64748b"] {
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-content [style*="linear-gradient(180deg,#f9fafb,#ffffff)"],
+        html.app-skin-dark .nxl-content [style*="linear-gradient(180deg, #f8fafc, #ffffff)"],
+        html.app-skin-dark .nxl-content [style*="linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)"] {
+            background: linear-gradient(180deg, var(--fd-dark-surface-2), var(--fd-dark-surface-1)) !important;
+        }
+
+        html.app-skin-dark .assignment-head,
+        html.app-skin-dark .assignment-card,
+        html.app-skin-dark .assignment-actions,
+        html.app-skin-dark .exam-detail-shell,
+        html.app-skin-dark .exam-detail-head,
+        html.app-skin-dark .exam-detail-body,
+        html.app-skin-dark .table-card,
+        html.app-skin-dark .attendance-card,
+        html.app-skin-dark .status-option,
+        html.app-skin-dark .att-card,
+        html.app-skin-dark .att-toolbar,
+        html.app-skin-dark .stat-box,
+        html.app-skin-dark .trainer-card,
+        html.app-skin-dark .trainer-card .card-head,
+        html.app-skin-dark .stat-card,
+        html.app-skin-dark .invoice-shell,
+        html.app-skin-dark .invoice-body,
+        html.app-skin-dark .soft-card,
+        html.app-skin-dark .invoice-table-wrap,
+        html.app-skin-dark .summary-card,
+        html.app-skin-dark .mini-stat,
+        html.app-skin-dark .crm-card,
+        html.app-skin-dark .section-soft,
+        html.app-skin-dark .timeline-content,
+        html.app-skin-dark .timeline-icon,
+        html.app-skin-dark .task-modal-content,
+        html.app-skin-dark .action-circle,
+        html.app-skin-dark .pagination-glass {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .assignment-table thead th,
+        html.app-skin-dark .performance-table thead th,
+        html.app-skin-dark .invoice-table thead th,
+        html.app-skin-dark .payment-history-table thead th {
+            background: var(--fd-dark-surface-2) !important;
+            color: var(--fd-dark-text) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .assignment-table td,
+        html.app-skin-dark .assignment-table th,
+        html.app-skin-dark .performance-table td,
+        html.app-skin-dark .performance-table th,
+        html.app-skin-dark .invoice-table td,
+        html.app-skin-dark .invoice-table th,
+        html.app-skin-dark .payment-history-table td,
+        html.app-skin-dark .payment-history-table th {
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .assignment-head .meta,
+        html.app-skin-dark .exam-detail-head p,
+        html.app-skin-dark .exam-meta-pill,
+        html.app-skin-dark .updated-at,
+        html.app-skin-dark .lead-info p,
+        html.app-skin-dark .pagination-info,
+        html.app-skin-dark .column-item span,
+        html.app-skin-dark .crm-label,
+        html.app-skin-dark .stat-box small,
+        html.app-skin-dark .stat-card small,
+        html.app-skin-dark .mini-stat small {
+            color: var(--fd-dark-muted) !important;
+        }
+
+        html.app-skin-dark .invoice-table .form-control[readonly],
+        html.app-skin-dark .invoice-table .remove-item:hover,
+        html.app-skin-dark .invoice-table .remove-item:focus,
+        html.app-skin-dark .column-item:hover,
+        html.app-skin-dark .action-circle:hover {
+            background: var(--fd-dark-surface-2) !important;
+        }
+
+        html.app-skin-dark .task-modal {
+            background: rgba(0, 0, 0, 0.72) !important;
+        }
+
+        html.app-skin-dark .timeline::before {
+            background: var(--fd-dark-border) !important;
+        }
+
+        /* Form elements dark mode fix */
+        html.app-skin-dark .section-box {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .section-title {
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .form-control,
+        html.app-skin-dark .form-select {
+            background-color: var(--fd-dark-surface-0) !important;
+            color: var(--fd-dark-text) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .form-control:focus,
+        html.app-skin-dark .form-select:focus {
+            background-color: var(--fd-dark-surface-0) !important;
+            border-color: #3454d1 !important;
+            box-shadow: 0 0 0 0.2rem var(--fd-dark-focus) !important;
+        }
+
+        html.app-skin-dark label {
+            color: var(--fd-dark-muted) !important;
+        }
+
+        html.app-skin-dark .card {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .card-header {
+            background: var(--fd-dark-surface-2) !important;
+            border-color: var(--fd-dark-border) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .modal-content {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .modal-header,
+        html.app-skin-dark .modal-footer {
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .modal-title {
+            color: var(--fd-dark-text) !important;
+        }
+
+        .nxl-search-dropdown {
+            width: 450px;
+        }
+
+        .global-search-item {
+            color: #111827;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .global-search-item:hover {
+            background: #f8f9fa;
+        }
+
+        .global-search-type-badge,
+        .global-search-tag {
+            background: #f1f5f9;
+            color: #1f2937;
+        }
+
+        .global-search-group-title {
+            color: #64748b;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .search-form,
+        html.app-skin-dark .nxl-search-dropdown .input-group-text {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .search-input-field {
+            background: var(--fd-dark-surface-0) !important;
+            border-color: var(--fd-dark-border) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .search-input-field::placeholder {
+            color: var(--fd-dark-muted) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .dropdown-divider {
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .search-items-wrapper,
+        html.app-skin-dark .nxl-search-dropdown .searching-for {
+            background: var(--fd-dark-surface-1) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .global-search-item {
+            color: var(--fd-dark-text) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .global-search-item:hover {
+            background: var(--fd-dark-surface-2) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .global-search-group-title,
+        html.app-skin-dark .nxl-search-dropdown .text-muted {
+            color: var(--fd-dark-muted) !important;
+        }
+
+        html.app-skin-dark .nxl-search-dropdown .global-search-type-badge,
+        html.app-skin-dark .nxl-search-dropdown .global-search-tag {
+            background: var(--fd-dark-surface-2) !important;
+            color: var(--fd-dark-text) !important;
+            border: 1px solid var(--fd-dark-border);
+        }
+
+        #allNotificationsModal {
+            z-index: 2000;
+        }
+
+        #allNotificationsModal .modal-dialog {
+            max-width: 620px;
+        }
+
+        #allNotificationsModal .modal-content {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+        }
+
+        #allNotificationsModal .modal-header {
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+            padding: 0.9rem 1rem;
+        }
+
+        #allNotificationsModal .modal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        #allNotificationsModal .modal-title-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #ebf4ff;
+            color: #2563eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        #allNotificationsModal .modal-subtext {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        #allNotificationsModal .notification-total {
+            font-size: 0.75rem;
+            border-radius: 999px;
+            padding: 0.3rem 0.55rem;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: 600;
+        }
+
+        #allNotificationsModal .modal-body {
+            background: #f8fafc;
+            padding: 0.8rem;
+        }
+
+        #pending-notifications-container .notifications-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.75rem;
+            position: relative;
+        }
+
+        #pending-notifications-container .notifications-item + .notifications-item {
+            margin-top: 0.6rem;
+        }
+
+        #pending-notifications-container .notification-remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 28px;
+            height: 28px;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        #pending-notifications-container .notification-remove-btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        html.app-skin-dark #allNotificationsModal .modal-content {
+            border-color: var(--fd-dark-border) !important;
+            box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+        }
+
+        html.app-skin-dark #allNotificationsModal .modal-header {
+            border-color: var(--fd-dark-border) !important;
+            background: linear-gradient(135deg, #151e31 0%, #111827 100%) !important;
+        }
+
+        html.app-skin-dark #allNotificationsModal .modal-title-icon {
+            background: rgba(52, 84, 209, 0.2) !important;
+            color: #93c5fd !important;
+        }
+
+        html.app-skin-dark #allNotificationsModal .modal-subtext {
+            color: var(--fd-dark-muted) !important;
+        }
+
+        html.app-skin-dark #allNotificationsModal .notification-total {
+            background: #1e293b !important;
+            color: #cbd5e1 !important;
+        }
+
+        html.app-skin-dark #allNotificationsModal .modal-body {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark #pending-notifications-container .notifications-item {
+            background: var(--fd-dark-surface-2) !important;
+            border-color: var(--fd-dark-border) !important;
+        }
+
+        html.app-skin-dark #pending-notifications-container .notification-remove-btn {
+            background: var(--fd-dark-surface-1) !important;
+            border-color: var(--fd-dark-border) !important;
+            color: var(--fd-dark-muted) !important;
+        }
+
+        html.app-skin-dark #pending-notifications-container .notification-remove-btn:hover {
+            background: var(--fd-dark-surface-0) !important;
+            color: var(--fd-dark-text) !important;
+        }
+
+    </style>
+    {% block extra_css %}{% endblock %}
+
+</head>
+
+<body>
+
+<!-- ================================================================ -->
+
+
+
+
+
+<!-- START SIDEBAR -->
+<!-- ================================================================ -->
+<nav class="nxl-navigation">
+    <div class="navbar-wrapper">
+        <div class="m-header">
+            <a href="{% url 'dashboard' %}" class="b-brand">
+                <img src="{% static 'assets/images/flow-logo-full.png' %}"
+                     alt="FlowDesk"
+                     class="logo logo-lg"
+                     style="width:100%;height:100%;object-fit:cover;display:block;">
+                <img src="{% static 'assets/images/flow-logo-f.png' %}"
+                     alt=""
+                     class="logo logo-sm" />
+            </a>
+        </div>
+
+        <div class="navbar-content">
+
+        {% if request.user.is_authenticated %}
+        {% with role=request.user.userprofile.role %}
+
+        <ul class="nxl-navbar">
+
+            <!-- ================= DASHBOARD (ALL) ================= -->
+            <li class="nxl-item">
+                <a class="nxl-link" href="{% url 'dashboard' %}">
+                    <span class="nxl-micon"><i class="feather-airplay"></i></span>
+                    <span class="nxl-mtext">Dashboard</span>
+                </a>
+            </li>
+
+            <!-- ================= ENQUIRY ================= -->
+            {% if role == "admin" or role == "cre" or role == "management" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="fa-solid fa-address-card"></i></span>
+                    <span class="nxl-mtext">Enquiry</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+
+                    {% if role == "admin" or role == "cre" %}
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'create_lead' %}">
+                            <span class="nxl-micon"><i class="fa-solid fa-plus"></i></span>
+                            <span class="nxl-mtext">Create Enquiry</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'leads' %}">
+                            <span class="nxl-micon"><i class="feather-list"></i></span>
+                            <span class="nxl-mtext">View All enquiries</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            {% endif %}
+
+            <!-- ================= FOLLOW UPS ================= -->
+            {% if role == "admin" or role == "cre" %}
+            <li class="nxl-item">
+                <a class="nxl-link" href="{% url 'followups' %}">
+                    <span class="nxl-micon"><i class="feather-phone-call"></i></span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    <span class="nxl-mtext">Follow Ups</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- ================= ADD (ADMIN ONLY) ================= -->
+            {% if role == "admin" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-settings"></i></span>
+                    <span class="nxl-mtext">Settings</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'status' %}">
+                            <span class="nxl-micon"><i class="feather-activity"></i></span>
+                            <span class="nxl-mtext">Status</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'source' %}">
+                            <span class="nxl-micon"><i class="feather-globe"></i></span>
+                            <span class="nxl-mtext">Source</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'department' %}">
+                            <span class="nxl-micon"><i class="feather-grid"></i></span>
+                            <span class="nxl-mtext">Department</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'course' %}">
+                            <span class="nxl-micon"><i class="feather-book-open"></i></span>
+                            <span class="nxl-mtext">Course</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'syllabus' %}">
+                            <span class="nxl-micon"><i class="feather-book"></i></span>
+                            <span class="nxl-mtext">Syllabus</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            {% endif %}
+
+            <!-- ================= STUDENTS ================= -->
+            {% if role == "admin" or role == "cre" or role == "trainer" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="fa-solid fa-users"></i></span>
+                    <span class="nxl-mtext">Students</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+
+                    {% if role == "admin" or role == "cre" %}
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'create_student' %}">
+                            <span class="nxl-micon"><i class="feather-user-plus"></i></span>
+                            <span class="nxl-mtext">Create Student</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'students' %}">
+                            <span class="nxl-micon"><i class="feather-list"></i></span>
+                            <span class="nxl-mtext">View Students List</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            {% endif %}
+
+            <!-- ================= USERS ================= -->
+            {% if role == "admin" or role == "management" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="fa-solid fa-user-tie"></i></span>
+                    <span class="nxl-mtext">User</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'create_user' %}">
+                            <span class="nxl-micon"><i class="feather-user-plus"></i></span>
+                            <span class="nxl-mtext">Add User</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'user_list' %}">
+                            <span class="nxl-micon"><i class="feather-users"></i></span>
+                            <span class="nxl-mtext">View Users List</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            {% endif %}
+
+            <!-- ================= PAYMENTS ================= -->
+            {% if role == "admin" or role == "cre" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-dollar-sign"></i></span>
+                    <span class="nxl-mtext">Payment</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'payments' %}">
+                            <span class="nxl-micon"><i class="feather-list"></i></span>
+                            <span class="nxl-mtext">Payment List</span>
+                        </a>
+                    </li>
+
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'invoice_view' %}">
+                            <span class="nxl-micon"><i class="feather-file-text"></i></span>
+                            <span class="nxl-mtext">Invoice View</span>
+                        </a>
+                    </li>
+
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'add_payment' %}">
+                            <span class="nxl-micon"><i class="feather-plus-circle"></i></span>
+                            <span class="nxl-mtext">Invoice Create</span>
+                        </a>
+                    </li>
+                    
+                </ul> 
+            </li>
+            {% endif %}
+
+            <!-- ================= BATCH ================= -->
+            {% if role == "admin" or role == "trainer" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="fa-solid fa-pen-to-square"></i></i></span>
+                    <span class="nxl-mtext">Batch</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                        <ul class="nxl-submenu">
+                            <li class="nxl-item">
+                                <a class="nxl-link" href="{% url 'add_batch' %}">
+                                    <i class="fa-solid fa-plus"></i> Add Batch
+                                </a>
+                            </li>
+                            <li class="nxl-item">
+                                <a class="nxl-link" href="{% url 'batch' %}">
+                                    <i class="feather-list me-1"></i> Batch
+                                </a>
+                            </li>
+                        </ul>
+            </li>
+            {% endif %}
+
+            <!-- ================= ATTENDANCE ================= -->
+            {% if role == "admin" or role == "trainer" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-briefcase"></i></span>
+                    <span class="nxl-mtext">Attendance</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'batch' %}?action=mark_attendance">
+                            <span class="nxl-micon"><i class="feather-check-square"></i></span>
+                            <span class="nxl-mtext">Mark Attendance</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'view_attendance' %}">
+                            <span class="nxl-micon"><i class="feather-eye"></i></span>
+                            <span class="nxl-mtext">View Attendance</span>
+                        </a>
+                    </li>
+                    {% comment %} <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'trainer_attendance_report' %}">
+                            <span class="nxl-micon"><i class="feather-users"></i></span>
+                            <span class="nxl-mtext">Trainer Attendace</span>
+                        </a>
+                    </li> {% endcomment %}
+                </ul>
+            </li>
+            {% endif %}
+
+            
+            <!-- ================= WORKOUT CENTER ================= -->
+            {% if role == "admin" or role == "trainer" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-layout"></i></span>
+                    <span class="nxl-mtext">Workout Center</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'assignment_list' %}">
+                            <span class="nxl-micon"><i class="feather-clipboard"></i></span>
+                            <span class="nxl-mtext">Assignment</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'exam_list' %}">
+                            <span class="nxl-micon"><i class="feather-edit-3"></i></span>
+                            <span class="nxl-mtext">Exam</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            {% endif %}
+
+            <!-- ================= DAILY SESSION UPDATE ================= -->
+            {% if role == "admin" or role == "trainer" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-calendar"></i></span>
+                    <span class="nxl-mtext">Daily Session Update</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'trainer_syllabus' %}">
+                            <span class="nxl-micon"><i class="feather-book-open"></i></span>
+                            <span class="nxl-mtext">View Syllabus</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'session_update' %}">
+                            <span class="nxl-micon"><i class="feather-plus-circle"></i></span>
+                            <span class="nxl-mtext">Add Session Update</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'session_update_list' %}">
+                            <span class="nxl-micon"><i class="feather-list"></i></span>
+                            <span class="nxl-mtext">View Session Updates</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            {% endif %}
+
+            {% if role == "admin" %}
+                  
+
+                <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-mail"></i></span>
+                    <span class="nxl-mtext">Mail Management</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'mail_pending_list' %}#batch-email-pending">
+                            <span class="nxl-micon"><i class="feather-users"></i></span>
+                            <span class="nxl-mtext">Batch Assignment</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'payment_email_pending_list' %}">
+                            <span class="nxl-micon"><i class="feather-credit-card"></i></span>
+                            <span class="nxl-mtext">Payment Confirmation</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'overdue_email_pending_list' %}">
+                            <span class="nxl-micon"><i class="feather-alert-circle"></i></span>
+                            <span class="nxl-mtext">Overdue Fee</span>
+                        </a>
+                    </li>
+
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'mail_management' %}">
+                            <span class="nxl-micon"><i class="feather-file-text"></i></span>
+                            <span class="nxl-mtext">Email Log</span>
+                        </a>
+                    </li>
+                </ul>
+            
+            {% endif %}
+
+
+
+            <!-- ================= REPORTS ================= -->
+            {% if role == "admin" or role == "management" %}
+            <li class="nxl-item nxl-hasmenu">
+                <a href="javascript:void(0);" class="nxl-link">
+                    <span class="nxl-micon"><i class="feather-cast"></i></span>
+                    <span class="nxl-mtext">Reports</span>
+                    <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                </a>
+                <ul class="nxl-submenu">
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'lead_report' %}">
+                            <span class="nxl-micon"><i class="feather-user"></i></span>
+                            <span class="nxl-mtext">Lead Report</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'student_report' %}">
+                            <span class="nxl-micon"><i class="feather-users"></i></span>
+                            <span class="nxl-mtext">Student Report</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'course_report' %}">
+                            <span class="nxl-micon"><i class="feather-book-open"></i></span>
+                            <span class="nxl-mtext">Course Report</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'batch_report' %}">
+                            <span class="nxl-micon"><i class="feather-layers"></i></span>
+                            <span class="nxl-mtext">Batch Report</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'assignment_report' %}">
+                            <span class="nxl-micon"><i class="feather-clipboard"></i></span>
+                            <span class="nxl-mtext">Assignment Report</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'exam_report' %}">
+                            <span class="nxl-micon"><i class="feather-edit-3"></i></span>
+                            <span class="nxl-mtext">Exam Report</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'payment_report' %}">
+                            <span class="nxl-micon"><i class="feather-dollar-sign"></i></span>
+                            <span class="nxl-mtext">Payment Report</span>
+                        </a>
+                    </li>
+                </ul> 
+            </li>
+            {% endif %}
+
+        </ul>
+
+        {% endwith %}
+        {% endif %}
+
+        </div>
+    </div>
+</nav>
+
+<!-- <nav class="nxl-navigation"> .... </nav> -->
+
+{{ sidebar }}
+
+
+<!-- END SIDEBAR -->
+<!-- ================================================================ -->
+<!-- START HEADER -->
+<!-- ================================================================ -->
+<header class="nxl-header">
+    <div class="header-wrapper">
+        <!--! [Start] Header Left !-->
+        <div class="header-left d-flex align-items-center gap-4">
+            <!--! [Start] nxl-head-mobile-toggler !-->
+            <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse">
+                <div class="hamburger hamburger--arrowturn">
+                    <div class="hamburger-box">
+                        <div class="hamburger-inner"></div>
+                    </div>
+                </div>
+            </a>
+            <!--! [End] nxl-head-mobile-toggler !-->
+            <!--! [Start] nxl-navigation-toggle !-->
+            <div class="nxl-navigation-toggle">
+                <a href="javascript:void(0);" id="menu-mini-button">
+                    <i class="feather-chevrons-left"></i>
+                </a>
+                <a href="javascript:void(0);" id="menu-expend-button" style="display: none">
+                    <i class="feather-chevrons-right"></i>
+                </a>
+            </div>
+            <!--! [End] nxl-navigation-toggle !-->
+        </div>
+        <!--! [End] Header Left !-->
+        <!--! [Start] Header Right !-->
+        <div class="header-right ms-auto">
+            <div class="d-flex align-items-center">
+                    <div class="dropdown nxl-h-item nxl-header-search">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                            <i class="feather-search"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-search-dropdown">
+                            <div class="input-group search-form">
+                                <span class="input-group-text">
+                                    <i class="feather-search fs-6 text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control search-input-field" id="globalSearchInput" placeholder="Search leads, students, users, courses, batches..." />
+                                <span class="input-group-text">
+                                    <button type="button" class="btn-close" id="clearSearchBtn"></button>
+                                </span>
+                            </div>
+                            <div class="dropdown-divider mt-0"></div>
+                            <div class="search-items-wrapper" id="searchResultsContainer" style="max-height: 400px; overflow-y: auto;">
+                                <div class="searching-for px-4 py-2" id="searchPlaceholder">
+                                    <p class="fs-11 fw-medium text-muted">Search across your CRM...</p>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="badge global-search-tag">Leads</span>
+                                        <span class="badge global-search-tag">Students</span>
+                                        <span class="badge global-search-tag">Users</span>
+                                        <span class="badge global-search-tag">Courses</span>
+                                        <span class="badge global-search-tag">Batches</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const searchInput = document.getElementById('globalSearchInput');
+                        const searchResultsContainer = document.getElementById('searchResultsContainer');
+                        const searchPlaceholder = document.getElementById('searchPlaceholder');
+                        const clearBtn = document.getElementById('clearSearchBtn');
+                        let searchTimeout;
+
+                        searchInput.addEventListener('input', function() {
+                            clearTimeout(searchTimeout);
+                            const query = this.value.trim();
+
+                            if (query.length < 2) {
+                                searchResultsContainer.innerHTML = searchPlaceholder.innerHTML;
+                                return;
+                            }
+
+                            searchTimeout = setTimeout(() => {
+                                fetch(`/api/search/?q=${encodeURIComponent(query)}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.results.length === 0) {
+                                            searchResultsContainer.innerHTML = '<div class="px-4 py-3 text-center text-muted">No results found</div>';
+                                            return;
+                                        }
+
+                                        let html = '';
+                                        const categories = {};
+
+                                        data.results.forEach(result => {
+                                            if (!categories[result.type]) {
+                                                categories[result.type] = [];
+                                            }
+                                            categories[result.type].push(result);
+                                        });
+
+                                        Object.entries(categories).forEach(([type, items]) => {
+                                            html += `<div class="px-3 py-2"><p class="fs-12 fw-bold global-search-group-title mb-2">${type.toUpperCase()}</p>`;
+                                            items.forEach(item => {
+                                                html += `
+                                                    <a href="${item.url}" class="d-flex align-items-center gap-2 px-2 py-2 text-decoration-none rounded mb-1 global-search-item">
+                                                        <div class="flex-grow-1">
+                                                            <p class="mb-0 fw-500">${item.name}</p>
+                                                            <p class="fs-12 text-muted mb-0">${item.mobile || item.email || item.department || item.course || item.status || ''}</p>
+                                                        </div>
+                                                        <span class="badge global-search-type-badge fs-11">${item.type}</span>
+                                                    </a>
+                                                `;
+                                            });
+                                            html += `</div><div class="dropdown-divider"></div>`;
+                                        });
+
+                                        searchResultsContainer.innerHTML = html;
+                                    })
+                                    .catch(error => {
+                                        console.error('Search error:', error);
+                                        searchResultsContainer.innerHTML = '<div class="px-4 py-3 text-center text-danger">Search error</div>';
+                                    });
+                            }, 300);
+                        });
+
+                        clearBtn.addEventListener('click', function() {
+                            searchInput.value = '';
+                            searchResultsContainer.innerHTML = searchPlaceholder.innerHTML;
+                            searchInput.focus();
+                        });
+                    });
+                    </script>
+
+                    <div class="nxl-h-item dark-light-theme">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
+                            <i class="feather-moon"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
+                            <i class="feather-sun"></i>
+                        </a>
+                    </div>
+                    
+                    {% if request.user.userprofile.role == "trainer" or request.user.userprofile.role == "cre" or request.user.userprofile.role == "admin" %}
+                    <div class="dropdown nxl-h-item" id="user-notifications">
+                        <a class="nxl-head-link me-3" data-bs-toggle="dropdown" href="#" role="button" data-bs-auto-close="outside">
+                            <i class="feather-bell"></i>
+                            <span class="badge bg-danger nxl-h-badge" id="notification-count" style="display:none;">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu" style="max-height: 500px; overflow-y: auto;">
+                            <div class="d-flex justify-content-between align-items-center notifications-head">
+                                <h6 class="fw-bold text-dark mb-0">Notifications</h6>
+                                <a href="javascript:void(0);" class="fs-11 text-primary text-end ms-auto" onclick="refreshNotifications()">
+                                    <i class="feather-refresh-cw"></i>
+                                    <span>Refresh</span>
+                                </a>
+                            </div>
+                            <div id="notifications-container">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-muted mt-2 mb-0">Loading notifications...</p>
+                                </div>
+                            </div>
+                            <div class="text-center notifications-footer">
+                                <a href="javascript:void(0);" class="fs-13 fw-semibold text-dark" onclick="openAllNotificationsModal(event)">
+                                    View All Notifications (<span id="pending-count">0</span>)
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="allNotificationsModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <div class="modal-title-wrap">
+                                        <span class="modal-title-icon">
+                                            <i class="feather-bell"></i>
+                                        </span>
+                                        <div>
+                                            <h6 class="modal-title mb-0">All Pending Notifications</h6>
+                                            <div class="modal-subtext">Review upcoming follow-ups and tasks</div>
+                                        </div>
+                                    </div>
+                                    <span class="notification-total" id="pending-count-modal">0 pending</span>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeAllNotificationsModal()"></button>
+                                </div>
+                                <div class="modal-body" id="pending-notifications-container">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="text-muted mt-2 mb-0">Loading notifications...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="dropdown nxl-h-item">
+                        <a class="nxl-head-link me-3" data-bs-toggle="dropdown" href="#" role="button" data-bs-auto-close="outside">
+                            <i class="feather-bell"></i>
+                            <span class="badge bg-danger nxl-h-badge">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu">
+                            <div class="d-flex justify-content-between align-items-center notifications-head">
+                                <h6 class="fw-bold text-dark mb-0">Notifications</h6>
+                            </div>
+                            <div class="text-center py-4">
+                                <i class="feather-bell fs-1 mb-3 text-muted"></i>
+                                <p class="text-muted">No notifications available</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="dropdown nxl-h-item">
+                        <a href="javascript:void(0);"
+                        data-bs-toggle="dropdown"
+                        role="button"
+                        data-bs-auto-close="outside"
+                        style="text-decoration:none;">
+
+                            <div
+                                style="
+                                    width:36px;
+                                    height:36px;
+                                    border-radius:50%;
+                                    background: hsl({{ request.user.username|length|add:20 }}0, 70%, 50%);
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    color:#ffffff;
+                                    font-size:16px;
+                                    font-weight:700;
+                                    text-transform:uppercase;
+                                "
+                            >
+                                {{ request.user.username|slice:":1"|upper }}
+                            </div>
+
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
+                            <div class="dropdown-header">
+                                <div class="d-flex align-items-center gap-3">
+
+                                    <!-- ALPHABET AVATAR -->
+                                    <div
+                                        style="
+                                            width:42px;
+                                            height:42px;
+                                            border-radius:50%;
+                                            background: hsl({{ request.user.username|length|add:20 }}0, 70%, 50%);
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            color:#ffffff;
+                                            font-size:18px;
+                                            font-weight:700;
+                                            text-transform:uppercase;
+                                        "
+                                    >
+                                        {{ request.user.username|slice:":1"|upper }}
+                                    </div>
+
+                                    <!-- USER INFO -->
+                                    <div>
+                                        <h6 class="text-dark mb-0">
+                                            {{ request.user.get_full_name|default:request.user.username }}
+
+                                            {% if request.user.userprofile.role == "admin" %}
+                                                <span class="badge bg-soft-danger text-danger ms-1">
+                                                    <i class="feather-shield me-1"></i> Admin
+                                                </span>
+
+                                            {% elif request.user.userprofile.role == "trainer" %}
+                                                <span class="badge bg-soft-primary text-primary ms-1">
+                                                    <i class="feather-user me-1"></i> Trainer
+                                                </span>
+
+                                            {% elif request.user.userprofile.role == "cre" %}
+                                                <span class="badge bg-soft-success text-success ms-1">
+                                                    <i class="feather-headphones me-1"></i> CRE
+                                                </span>
+
+                                            {% elif request.user.userprofile.role == "management" %}
+                                                <span class="badge bg-soft-warning text-warning ms-1">
+                                                    <i class="feather-briefcase me-1"></i> Management
+                                                </span>
+                                            {% endif %}
+
+                                        </h6>
+
+                                        <span class="fs-12 fw-medium text-muted">
+                                            {{ request.user.email }}
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'user_detail' request.user.id %}" class="dropdown-item">
+                                <i class="feather-user"></i>
+                                <span>Profile Details</span>
+                            </a>
+                           
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'logout' %}" class="dropdown-item">
+                                <i class="feather-log-out"></i>
+                                <span>Logout</span>
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--! [End] Header Right !-->
+        </div>
+    </header>
+{{ header }}
+
+<!-- ================================================================ -->
+<!-- END HEADER -->
+<!-- ================================================================ -->
+
+<!-- ================================================================ -->
+<!-- MAIN CONTENT AREA -->
+<!-- ================================================================ -->
+
+<main class="nxl-container">
+    <div class="nxl-content">
+
+        {% block page_header %}
+        {% if page_title %}
+        <div class="page-header">
+            <div class="page-header-left d-flex align-items-center">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">{{ page_title }}</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                    {% if breadcrumb_parent %}
+                    <li class="breadcrumb-item"><a href="{{ breadcrumb_parent_url }}">{{ breadcrumb_parent }}</a></li>
+                    {% endif %}
+                    <li class="breadcrumb-item">{{ breadcrumb_current|default:page_title }}</li>
+                </ul>
+            </div>
+            <div class="page-header-right ms-auto">
+                <div class="page-header-right-items">
+                    <div class="d-flex d-md-none">
+                        <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                            <i class="feather-arrow-left me-2"></i>
+                            <span>Back</span>
+                        </a>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </div>
+                <div class="d-md-none d-flex align-items-center">
+                    <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                        <i class="feather-align-right fs-20"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endblock %}
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+</main>
+
+<!-- ================================================================ -->
+<!-- FOOTER SCRIPTS -->
+<!-- ================================================================ -->
+
+<script src="{% static 'assets/vendors/js/vendors.min.js' %}"></script>
+<script src="{% static 'assets/vendors/js/daterangepicker.min.js' %}"></script>
+<script src="{% static 'assets/vendors/js/apexcharts.min.js' %}"></script>
+<script src="{% static 'assets/vendors/js/circle-progress.min.js' %}"></script>
+
+<script src="{% static 'assets/js/common-init.min.js' %}"></script>
+<script src="{% static 'assets/js/dashboard-init.min.js' %}"></script>
+<script src="{% static 'assets/js/theme-customizer-init.min.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const root = document.documentElement;
+        const desktopMedia = window.matchMedia('(min-width: 1200px)');
+
+        function keepSidebarVisible() {
+            root.classList.remove('sidebar-hover-hide');
+        }
+
+        keepSidebarVisible();
+
+        if (desktopMedia.addEventListener) {
+            desktopMedia.addEventListener('change', keepSidebarVisible);
+        } else if (desktopMedia.addListener) {
+            desktopMedia.addListener(keepSidebarVisible);
+        }
+
+        // Auto-dismiss alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+
+        // Load notifications for trainer, CRE, and admin
+        {% if request.user.userprofile.role == "trainer" or request.user.userprofile.role == "cre" or request.user.userprofile.role == "admin" %}
+        loadTrainerNotifications();
+        // Refresh notifications every 30 minutes (1800000ms) instead of 5 minutes
+        setInterval(loadTrainerNotifications, 1800000);
+        {% endif %}
+    });
+
+    {% if request.user.userprofile.role == "trainer" or request.user.userprofile.role == "cre" or request.user.userprofile.role == "admin" %}
+    let notificationLoadInProgress = false;
+    let lastNotificationLoadTime = 0;
+    const NOTIFICATION_CACHE_DURATION = 60000; // Cache for 1 minute
+    let cachedNotifications = null;
+
+    function notificationMeta(notif) {
+        const iconClass = notif.type === 'followup' ? 'feather-phone-call' :
+            (notif.type === 'exam' ? 'feather-edit-3' : 'feather-clipboard');
+        const bgColor = notif.type === 'followup' ? 'bg-primary' :
+            (notif.type === 'exam' ? 'bg-warning' : 'bg-info');
+        return { iconClass, bgColor };
+    }
+
+    function renderNotifications(containerId, notifications, emptyText, emptySubText) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const showRemoveButton = containerId === 'pending-notifications-container';
+
+        if (notifications && notifications.length > 0) {
+            let html = '';
+            notifications.forEach(notif => {
+                const meta = notificationMeta(notif);
+                html += `
+                    <div class="notifications-item" data-notification-id="${notif.id || ''}">
+                        ${showRemoveButton ? `
+                            <button type="button" class="notification-remove-btn" onclick="dismissNotificationItem(this, event)" aria-label="Remove notification">
+                                <i class="feather-x fs-12"></i>
+                            </button>
+                        ` : ''}
+                        <div class="avatar-text ${meta.bgColor} rounded me-3">
+                            <i class="${meta.iconClass}"></i>
+                        </div>
+                        <div class="notifications-desc" style="flex: 1;">
+                            <a href="${notif.url}" class="font-body text-truncate-2-line">
+                                <span class="fw-semibold text-dark">${notif.title}</span><br>
+                                ${notif.message}
+                            </a>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <div class="notifications-date text-muted">
+                                    <i class="feather-calendar fs-11 me-1"></i>${notif.date}
+                                    ${notif.time ? `<i class="feather-clock fs-11 ms-2 me-1"></i>${notif.time}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="feather-bell fs-1 mb-3 text-muted"></i>
+                <p class="text-muted">${emptyText}</p>
+                ${emptySubText ? `<small class="text-muted">${emptySubText}</small>` : ''}
+            </div>
+        `;
+    }
+
+    function updatePendingNotificationCount() {
+        const pendingContainer = document.getElementById('pending-notifications-container');
+        const pendingItems = pendingContainer ? pendingContainer.querySelectorAll('.notifications-item').length : 0;
+        const pendingCountEl = document.getElementById('pending-count');
+        const pendingCountModalEl = document.getElementById('pending-count-modal');
+
+        if (pendingCountEl) {
+            pendingCountEl.textContent = pendingItems;
+        }
+
+        if (pendingCountModalEl) {
+            pendingCountModalEl.textContent = `${pendingItems} pending`;
+        }
+
+        if (pendingContainer && pendingItems === 0) {
+            pendingContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="feather-bell fs-1 mb-3 text-muted"></i>
+                    <p class="text-muted">No upcoming or pending notifications</p>
+                </div>
+            `;
+        }
+    }
+
+    function getCsrfToken() {
+        const cookies = document.cookie ? document.cookie.split(';') : [];
+        for (let i = 0; i < cookies.length; i += 1) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith('csrftoken=')) {
+                return decodeURIComponent(cookie.substring('csrftoken='.length));
+            }
+        }
+        return '';
+    }
+
+    function removeNotificationItem(button, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const item = button ? button.closest('.notifications-item') : null;
+        if (!item) return;
+
+        item.remove();
+        updatePendingNotificationCount();
+    }
+
+    function dismissNotificationItem(button, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const item = button ? button.closest('.notifications-item') : null;
+        const notificationId = item ? item.getAttribute('data-notification-id') : '';
+        if (!item || !notificationId) return;
+
+        button.disabled = true;
+
+        fetch("{% url 'dismiss_notification' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ notification_id: notificationId })
+        })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(result => {
+                if (!result.ok || !result.data.success) {
+                    throw new Error(result.data.message || 'Could not remove notification.');
+                }
+
+                cachedNotifications = null;
+                removeNotificationItem(button);
+            })
+            .catch(error => {
+                console.error('Notification dismiss error:', error);
+                button.disabled = false;
+            });
+    }
+
+    function loadTrainerNotifications() {
+        const now = Date.now();
+        
+        // Skip if already loading or cache is still fresh
+        if (notificationLoadInProgress || (cachedNotifications && now - lastNotificationLoadTime < NOTIFICATION_CACHE_DURATION)) {
+            return;
+        }
+        
+        notificationLoadInProgress = true;
+        
+        fetch('/api/trainer-notifications/')
+            .then(response => response.json())
+            .then(data => {
+                cachedNotifications = data;
+                lastNotificationLoadTime = now;
+                const badge = document.getElementById('notification-count');
+                const pendingCountEl = document.getElementById('pending-count');
+                const todayNotifications = data.today_notifications || [];
+                const pendingNotifications = data.pending_notifications || [];
+
+                if (todayNotifications.length > 0) {
+                    badge.textContent = todayNotifications.length;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                if (pendingCountEl) {
+                    pendingCountEl.textContent = pendingNotifications.length;
+                }
+                const pendingCountModalEl = document.getElementById('pending-count-modal');
+                if (pendingCountModalEl) {
+                    pendingCountModalEl.textContent = `${pendingNotifications.length} pending`;
+                }
+
+                renderNotifications('notifications-container', todayNotifications, 'No notifications for today', "You're all caught up!");
+                renderNotifications('pending-notifications-container', pendingNotifications, 'No upcoming or pending notifications', '');
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                const container = document.getElementById('notifications-container');
+                const pendingContainer = document.getElementById('pending-notifications-container');
+                const errorHtml = `
+                    <div class="text-center py-4">
+                        <i class="feather-alert-circle fs-1 mb-3 text-danger"></i>
+                        <p class="text-muted">Failed to load notifications</p>
+                        <button class="btn btn-sm btn-primary" onclick="loadTrainerNotifications()">Retry</button>
+                    </div>
+                `;
+                if (container) container.innerHTML = errorHtml;
+                if (pendingContainer) pendingContainer.innerHTML = errorHtml;
+            })
+            .finally(() => {
+                notificationLoadInProgress = false;
+            });
+    }
+
+    function refreshNotifications() {
+        cachedNotifications = null;
+        lastNotificationLoadTime = 0;
+        const container = document.getElementById('notifications-container');
+        const pendingContainer = document.getElementById('pending-notifications-container');
+        const loadingHtml = `
+            <div class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2 mb-0">Refreshing...</p>
+            </div>
+        `;
+        if (container) container.innerHTML = loadingHtml;
+        if (pendingContainer) pendingContainer.innerHTML = loadingHtml;
+        loadTrainerNotifications();
+    }
+
+    function openAllNotificationsModal(event) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        const modalEl = document.getElementById('allNotificationsModal');
+        if (!modalEl) {
+            return;
+        }
+
+        // Ensure modal is attached to <body> to avoid header/dropdown stacking issues
+        if (modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+
+        const dropdown = document.querySelector('#user-notifications .dropdown-menu');
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+
+        const dropdownRoot = document.getElementById('user-notifications');
+        if (dropdownRoot) {
+            dropdownRoot.classList.remove('show');
+        }
+
+        const toggle = dropdownRoot ? dropdownRoot.querySelector('[data-bs-toggle="dropdown"]') : null;
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            return;
+        }
+
+        // Fallback if bootstrap modal API is unavailable
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        modalEl.removeAttribute('aria-hidden');
+        modalEl.setAttribute('aria-modal', 'true');
+        document.body.classList.add('modal-open');
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.setAttribute('data-fallback-backdrop', 'true');
+        document.body.appendChild(backdrop);
+    }
+
+    function closeAllNotificationsModal() {
+        const modalEl = document.getElementById('allNotificationsModal');
+        if (!modalEl) return;
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) {
+                instance.hide();
+            }
+            return;
+        }
+
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.removeAttribute('aria-modal');
+        document.body.classList.remove('modal-open');
+        document.querySelectorAll('[data-fallback-backdrop="true"]').forEach(el => el.remove());
+    }
+    {% endif %}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

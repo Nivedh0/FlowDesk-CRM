@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Department{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Departments</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Departments</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+
+                <!-- Add Department Section -->
+                <div class="card-body">
+                    <div class="mb-5 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 me-4">
+                            <span class="d-block mb-2">Add Department :</span>
+                            <span class="fs-12 fw-normal text-muted text-truncate-1-line">Create a new department</span>
+                        </h5>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="departmentNameInput" class="fw-semibold">Department Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-layers"></i></div>
+                                    <input type="text" name="department_name" id="departmentNameInput" class="form-control" placeholder="Enter department name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-plus-circle me-1"></i> Add Department
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr class="mt-0">
+
+                <!-- Department List Section -->
+                <div class="card-body">
+                    <div class="mb-5 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 me-4">
+                            <span class="d-block mb-2">Department List :</span>
+                            <span class="fs-12 fw-normal text-muted text-truncate-1-line">Manage all departments</span>
+                        </h5>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th style="width:60px;text-align:center;">#</th>
+                                    <th style="text-align:center;">Department Name</th>
+                                    <th style="width:100px;text-align:center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for department in departments %}
+                                <tr>
+                                    <td style="text-align:center;">{{ forloop.counter }}</td>
+                                    <td style="font-weight:600;text-align:center;">
+                                        {{ department.department_name }}
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <form method="post" action="{% url 'delete_department' department.id %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" onclick="return confirm('Delete this department?');" class="btn btn-sm text-danger" style="border:none;background:none;padding:4px 8px;">
+                                                <i class="feather-trash-2" style="font-size:18px;"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        No departments available
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<style>
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+</style>

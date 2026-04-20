@@ -1,0 +1,124 @@
+<div class="pagination-row">
+    <nav class="pagination-glass">
+        <ul class="pagination pagination-modern mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                    &lsaquo; Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&lsaquo; Previous</span>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link"
+                    href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                    Next &rsaquo;
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next &rsaquo;</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    <div class="pagination-info">
+        Showing
+        <strong>{{ page_obj.start_index }}</strong>
+        &ndash;
+        <strong>{{ page_obj.end_index }}</strong>
+        of
+        <strong>{{ paginator.count }}</strong>
+        {{ item_label }}
+    </div>
+</div>
+
+<style>
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+</style>

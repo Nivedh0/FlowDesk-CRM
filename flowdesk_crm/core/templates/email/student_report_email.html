@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Report - {{ student.student_name }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 760px;
+            margin: 24px auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1f4e78 0%, #1e40af 100%);
+            color: #ffffff;
+            padding: 24px;
+        }
+        .header h1 {
+            margin: 0 0 6px;
+            font-size: 22px;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.92;
+        }
+        .content {
+            padding: 24px;
+        }
+        .box {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #f8fafc;
+        }
+        .box h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: #1e293b;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .meta-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .meta-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+        .meta-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .section-title {
+            margin: 18px 0 10px;
+            font-size: 15px;
+            color: #334155;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .stats-grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .stats-grid.two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .stat {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+        th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        tr:last-child td {
+            border-bottom: 0;
+        }
+        .muted {
+            color: #64748b;
+            font-size: 13px;
+        }
+        .footer {
+            padding: 16px 24px 24px;
+            color: #64748b;
+            font-size: 12px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        @media (max-width: 640px) {
+            .meta-grid,
+            .stats-grid,
+            .stats-grid.three,
+            .stats-grid.two {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Student Academic & Financial Report</h1>
+            <p>{{ company_name }} | Generated on {{ generated_at|date:"d M Y, h:i A" }}</p>
+        </div>
+
+        <div class="content">
+            <div class="box">
+                <h3>Student Details</h3>
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <div class="meta-label">Student Name</div>
+                        <div class="meta-value">{{ student.student_name }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Email</div>
+                        <div class="meta-value">{{ student.email|default:"-" }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Mobile</div>
+                        <div class="meta-value">{{ student.mobile|default:"-" }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">{{ student.get_status_display }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if not report_data %}
+            <p class="muted">No batch/course report data is available for this student yet.</p>
+            {% endif %}
+
+            {% for data in report_data %}
+            <div class="box">
+                <h3>{{ data.course.course_name }} - {{ data.batch.batch_name }}</h3>
+
+                <h4 class="section-title">Attendance</h4>
+                <div class="stats-grid">
+                    <div class="stat"><div class="stat-label">Total</div><div class="stat-value">{{ data.attendance.total }}</div></div>
+                    <div class="stat"><div class="stat-label">Present</div><div class="stat-value">{{ data.attendance.present }}</div></div>
+                    <div class="stat"><div class="stat-label">Absent</div><div class="stat-value">{{ data.attendance.absent }}</div></div>
+                    <div class="stat"><div class="stat-label">Percentage</div><div class="stat-value">{{ data.attendance.percentage }}%</div></div>
+                </div>
+
+                <h4 class="section-title">Assignments</h4>
+                <div class="stats-grid three">
+                    <div class="stat"><div class="stat-label">Total</div><div class="stat-value">{{ data.assignments.total }}</div></div>
+                    <div class="stat"><div class="stat-label">Submitted</div><div class="stat-value">{{ data.assignments.submitted }}</div></div>
+                    <div class="stat"><div class="stat-label">Completion</div><div class="stat-value">{{ data.assignments.percentage }}%</div></div>
+                </div>
+
+                <h4 class="section-title">Exams</h4>
+                <div class="stats-grid two">
+                    <div class="stat"><div class="stat-label">Total Exams</div><div class="stat-value">{{ data.exams.total }}</div></div>
+                    <div class="stat"><div class="stat-label">Average Score</div><div class="stat-value">{{ data.exams.percentage }}%</div></div>
+                </div>
+                {% if data.exams.exam_list %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exam</th>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Max Marks</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in data.exams.exam_list %}
+                        <tr>
+                            <td>{{ exam.title }}</td>
+                            <td>{{ exam.date|date:"d M Y" }}</td>
+                            <td>{{ exam.score }}</td>
+                            <td>{{ exam.max_marks }}</td>
+                            <td>{{ exam.percentage }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="muted">No exam records available.</p>
+                {% endif %}
+
+                <h4 class="section-title">Fees</h4>
+                {% if data.fees %}
+                <div class="stats-grid">
+                    <div class="stat"><div class="stat-label">Total Fee</div><div class="stat-value">&#8377;{{ data.fees.total_fee }}</div></div>
+                    <div class="stat"><div class="stat-label">Paid</div><div class="stat-value">&#8377;{{ data.fees.paid_amount }}</div></div>
+                    <div class="stat"><div class="stat-label">Pending</div><div class="stat-value">&#8377;{{ data.fees.pending_amount }}</div></div>
+                    <div class="stat"><div class="stat-label">Status</div><div class="stat-value">{{ data.fees.status|upper }}</div></div>
+                </div>
+                {% if data.fees.payments %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Mode</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in data.fees.payments %}
+                        <tr>
+                            <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                            <td>&#8377;{{ payment.amount_paid }}</td>
+                            <td>{{ payment.get_payment_mode_display }}</td>
+                            <td>{{ payment.remarks|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+                {% else %}
+                <p class="muted">No fee record found for this course.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="footer">
+            <div>This is an automated report email from {{ company_name }}.</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}Add Batch{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Add Batch</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'batch' %}">Batches</a></li>
+            <li class="breadcrumb-item">Add</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} mb-3 mx-4 mt-4">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" action="{% url 'add_batch' %}">
+                    {% csrf_token %}
+
+                    <!-- Batch Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Batch Details :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Basic information for the batch</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="batchNameInput" class="fw-semibold">Batch Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-layers"></i></div>
+                                    <input type="text" name="batch_name" id="batchNameInput" class="form-control" placeholder="Enter batch name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="department_select" class="fw-semibold">Department: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="department" id="department_select" class="form-control" required>
+                                    <option value="">Select Department</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="course_select" class="fw-semibold">Course: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="course" id="course_select" class="form-control" required>
+                                    <option value="">Select Course</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}" data-dept="{{ course.department.id }}" data-duration="{{ course.duration_months }}">
+                                        {{ course.course_name }} ({{ course.department.department_name }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="trainerSelect" class="fw-semibold">Trainer: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="trainer" id="trainerSelect" class="form-control" required>
+                                    <option value="">Select Trainer</option>
+                                    {% for trainer in trainers %}
+                                    <option value="{{ trainer.id }}">{{ trainer.user.get_full_name|default:trainer.user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Only trainers specialized in the selected department and course will be shown.</small>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="modeSelect" class="fw-semibold">Mode: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="mode" id="modeSelect" class="form-control" required>
+                                    <option value="">Select Mode</option>
+                                    <option value="Online">Online</option>
+                                    <option value="Offline">Offline</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="maxStudentsInput" class="fw-semibold">Max Students: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-users"></i></div>
+                                    <input type="number" name="max_students" id="maxStudentsInput" class="form-control" value="30" min="1" max="100">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Schedule Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Schedule :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Batch timing and duration</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="start_date" class="fw-semibold">Start Date: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="date" name="start_date" id="start_date" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="end_date" class="fw-semibold">End Date: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="date" name="end_date" id="end_date" class="form-control" required readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="start_time" class="fw-semibold">Start Time: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-clock"></i></div>
+                                    <input type="time" name="start_time" id="start_time" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="end_time" class="fw-semibold">End Time: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-clock"></i></div>
+                                    <input type="time" name="end_time" id="end_time" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Action Buttons -->
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'batch' %}" class="btn btn-outline-secondary">
+                                <i class="feather-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-plus-circle me-1"></i> Add Batch
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-backdrop.show {
+    opacity: 0.6;
+}
+</style>
+
+<script>
+// filter courses by department
+document.getElementById('department_select').addEventListener('change', function() {
+    const deptId = this.value;
+    const courseOptions = document.querySelectorAll('#course_select option[data-dept]');
+    
+    courseOptions.forEach(option => {
+        if (deptId === '' || option.dataset.dept === deptId) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+
+    document.getElementById("course_select").value = "";
+    document.getElementById("end_date").value = "";
+});
+
+// AUTO END DATE CALCULATION
+function calculateEndDate() {
+    const startDate = document.getElementById("start_date").value;
+    const courseSelect = document.getElementById("course_select");
+
+    if (!startDate || courseSelect.value === "") return;
+
+    const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+    const duration = selectedOption.getAttribute("data-duration");
+
+    if (!duration) return;
+
+    let start = new Date(startDate);
+    start.setMonth(start.getMonth() + parseInt(duration));
+
+    const yyyy = start.getFullYear();
+    const mm = String(start.getMonth() + 1).padStart(2, '0');
+    const dd = String(start.getDate()).padStart(2, '0');
+
+    const endDate = `${yyyy}-${mm}-${dd}`;
+
+    document.getElementById("end_date").value = endDate;
+}
+
+// trigger
+document.getElementById("course_select").addEventListener("change", calculateEndDate);
+document.getElementById("start_date").addEventListener("change", calculateEndDate);
+</script>
+
+{% endblock %}

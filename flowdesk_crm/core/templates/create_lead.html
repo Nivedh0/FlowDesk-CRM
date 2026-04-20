@@ -1,0 +1,697 @@
+{% extends 'base.html' %}
+{% block title %}Create Lead{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Create Lead</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'leads' %}">Leads</a></li>
+            <li class="breadcrumb-item">Create</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal" style="border-radius: 0; padding: 6px 12px;">
+            <i class="feather-upload me-1"></i> Import Excel
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <form method="POST" action="{% url 'create_lead' %}" id="createLeadForm">
+                    {% csrf_token %}
+
+                    <!-- Lead Status Section -->
+                    <div class="card-body lead-status">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Lead Status :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Manage lead status, source, and assignment details</span>
+                            </h5>
+                        </div>
+                        <div class="row">
+
+                            <div class="col-lg-4 mb-4">
+                                <label class="form-label">Status</label>
+                                <input type="text"
+                                       class="form-control"
+                                       value="{{ default_status.status_name|default:'New Enquiry' }}"
+                                       readonly>
+                            </div>
+                            <div class="col-lg-4 mb-4">
+                                <label class="form-label">Source</label>
+                                <select name="source" class="form-control">
+                                    <option value="">Select Source</option>
+                                    {% for source in sources %}
+                                    <option value="{{ source.id }}">{{ source.source_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-lg-4 mb-4">
+                                <label class="form-label">Date</label>
+                                <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <label class="form-label">Created By</label>
+                                <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <label class="form-label">Assign to User</label>
+                                {% if current_user_profile.role == 'cre' %}
+                                <input type="text"
+                                       class="form-control"
+                                       value="{{ current_user_profile.user.get_full_name|default:current_user_profile.user.username }}"
+                                       readonly>
+                                <input type="hidden" name="assigned_to" value="{{ current_user_profile.id }}">
+                                {% else %}
+                                <select name="assigned_to" class="form-control">
+                                    <option value="">Not Selected</option>
+                                    {% for cre in cre_users %}
+                                    <option value="{{ cre.id }}">
+                                        {{ cre.user.get_full_name|default:cre.user.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Lead Info Section -->
+                    <div class="card-body general-info">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Lead Info :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">General information for your lead</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="nameInput" class="fw-semibold">Name: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-user"></i></div>
+                                    <input type="text" name="name" class="form-control" id="nameInput" placeholder="Name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="emailInput" class="fw-semibold">Email: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-mail"></i></div>
+                                    <input type="email" name="email" class="form-control" id="emailInput" placeholder="Email" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="phoneInput" class="fw-semibold">Phone: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-phone"></i></div>
+                                    <input type="text" name="phone" class="form-control phone-like-input" id="phoneInput" placeholder="Phone" inputmode="tel" pattern="\+?[0-9]{10,15}" maxlength="25" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="dobInput" class="fw-semibold">DOB: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="date" name="dob" class="form-control" id="dobInput">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="qualificationInput" class="fw-semibold">Qualification: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-award"></i></div>
+                                    <input type="text" name="qualification" class="form-control" id="qualificationInput" placeholder="Qualification">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="yearOfPassingInput" class="fw-semibold">Year of Passing: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-clock"></i></div>
+                                    <input type="number" name="year_of_passing" class="form-control" id="yearOfPassingInput" placeholder="Year of Passing" min="1900" max="2100" step="1">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="guardianNumberInput" class="fw-semibold">Guardian Number: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-phone-call"></i></div>
+                                    <input type="text" name="guardian_number" class="form-control phone-like-input" id="guardianNumberInput" placeholder="Guardian Number" inputmode="tel" pattern="\+?[0-9]{10,15}" maxlength="25">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="whatsappInput" class="fw-semibold">WhatsApp: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-message-circle"></i></div>
+                                    <input type="text" name="whatsapp" class="form-control phone-like-input" id="whatsappInput" placeholder="WhatsApp" inputmode="tel" pattern="\+?[0-9]{10,15}" maxlength="20">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="collegeInput" class="fw-semibold">College Name: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-book"></i></div>
+                                    <input type="text" name="college_name" class="form-control" id="collegeInput" placeholder="College Name">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Mode: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="mode" class="form-control">
+                                    <option value="">Select Mode</option>
+                                    <option value="online">Online</option>
+                                    <option value="offline">Offline</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Interested Courses Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Interested Courses :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select departments and courses</span>
+                            </h5>
+                        </div>
+                        <div id="courseContainer">
+                            <div class="row mb-3 course-row align-items-center">
+                                <div class="col-lg-5 mb-2">
+                                    <label class="form-label">Department</label>
+                                    <select name="departments[]" class="form-control dept-select">
+                                        <option value="">Select Department</option>
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-5 mb-2">
+                                    <label class="form-label">Course</label>
+                                    <select name="courses[]" class="form-control course-select" disabled>
+                                        <option value="">Select Department First</option>
+                                        {% for course in courses %}
+                                        <option value="{{ course.id }}" data-department="{{ course.department.id }}">{{ course.course_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-2 mb-2">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <button type="button" class="btn btn-primary w-100" onclick="addCourseRow()">+ Add</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Address Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Address Details :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Complete address information</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="houseInput" class="fw-semibold">House Name: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-home"></i></div>
+                                    <input type="text" name="house_name" class="form-control" id="houseInput" placeholder="House Name">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="placeInput" class="fw-semibold">Place: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-map"></i></div>
+                                    <input type="text" name="place" class="form-control" id="placeInput" placeholder="Place">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="districtInput" class="fw-semibold">District: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-map-pin"></i></div>
+                                    <input type="text" name="district" class="form-control" id="districtInput" placeholder="District">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="stateInput" class="fw-semibold">State: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-navigation"></i></div>
+                                    <input type="text" name="state" class="form-control" id="stateInput" placeholder="State">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="locationInput" class="fw-semibold">Location: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-compass"></i></div>
+                                    <input type="text" name="location" class="form-control" id="locationInput" placeholder="Location">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="feedbackInput" class="fw-semibold">Feedback: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-message-square"></i></div>
+                                    <textarea name="feedback" class="form-control" id="feedbackInput" rows="3" placeholder="Feedback"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Follow Up Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Follow Up :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Schedule follow-up details</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="followupTitleInput" class="fw-semibold">Title: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-tag"></i></div>
+                                    <input type="text" name="followup_title" class="form-control" id="followupTitleInput" placeholder="Follow-up Title">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="followupDateInput" class="fw-semibold">Date: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="date" name="followup_date" class="form-control" id="followupDateInput">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="followupTimeInput" class="fw-semibold">Time: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-clock"></i></div>
+                                    <input type="time" name="followup_time" class="form-control" id="followupTimeInput" >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Campaign Details Section -->
+                    <div class="card-body">
+                        <div class="mb-5 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Campaign Details :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Marketing campaign information</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="campaignNameInput" class="fw-semibold">Campaign Name: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-target"></i></div>
+                                    <input type="text" name="campaign_name" class="form-control" id="campaignNameInput" placeholder="Campaign Name">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="campaignAdsetInput" class="fw-semibold">Campaign Adset: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-layers"></i></div>
+                                    <input type="text" name="campaign_adset" class="form-control" id="campaignAdsetInput" placeholder="Campaign Adset">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label for="campaignContentInput" class="fw-semibold">Campaign Content: </label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-file-text"></i></div>
+                                    <input type="text" name="campaign_content" class="form-control" id="campaignContentInput" placeholder="Campaign Content">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <!-- Action Buttons -->
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="feather-x-circle me-1"></i> Clear
+                            </button>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmCreateLeadModal">
+                                <i class="feather-save me-1"></i> Save Lead
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addCourseRow(){
+    const container=document.getElementById("courseContainer");
+
+    const row=document.createElement("div");
+    row.className="row g-3 course-row mb-2";
+
+    row.innerHTML=`
+        <div class="col-lg-5">
+            <select name="departments[]" class="form-control dept-select">
+                <option value="">Select Department</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-lg-5">
+            <select name="courses[]" class="form-control course-select" disabled>
+                <option value="">Select Department First</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}" data-department="{{ course.department.id }}">
+                        {{ course.course_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-lg-2">
+            <button type="button" class="btn btn-danger w-100 remove-btn">Remove</button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+function getSelectedCourses(){
+    const selected=[];
+    document.querySelectorAll(".course-select").forEach(select=>{
+        if(select.value) selected.push(select.value);
+    });
+    return selected;
+}
+
+function updateAllCourseSelects(){
+    const selectedCourses=getSelectedCourses();
+    document.querySelectorAll(".course-row").forEach(row=>{
+        const courseSelect=row.querySelector(".course-select");
+        const currentValue=courseSelect.value;
+        
+        Array.from(courseSelect.options).forEach(option=>{
+            if(!option.value) return;
+            
+            const isSelected=selectedCourses.includes(option.value);
+            const isCurrent=option.value===currentValue;
+            
+            if(isSelected && !isCurrent){
+                option.disabled=true;
+                option.style.display='none';
+            }else if(!option.hidden){
+                option.disabled=false;
+                option.style.display='';
+            }
+        });
+    });
+}
+
+document.addEventListener("change",function(e){
+    if(e.target.classList.contains("dept-select")){
+        const row=e.target.closest(".course-row");
+        updateCourseOptions(row);
+    }
+    if(e.target.classList.contains("course-select")){
+        updateAllCourseSelects();
+    }
+});
+
+document.addEventListener("click",function(e){
+    if(e.target.classList.contains("remove-btn")){
+        e.target.closest(".course-row").remove();
+        updateAllCourseSelects();
+    }
+});
+
+function updateCourseOptions(row){
+    const deptSelect=row.querySelector(".dept-select");
+    const courseSelect=row.querySelector(".course-select");
+    if(!deptSelect || !courseSelect) return;
+
+    const deptId=deptSelect.value;
+    const placeholderOption=courseSelect.options[0];
+    let hasMatchingCourse=false;
+
+    Array.from(courseSelect.options).forEach(option=>{
+        if(!option.value){
+            option.hidden=false;
+            option.disabled=false;
+            return;
+        }
+
+        const isMatch=option.dataset.department===deptId;
+        option.hidden=!deptId || !isMatch;
+        option.disabled=!isMatch;
+        if(isMatch) hasMatchingCourse=true;
+    });
+
+    courseSelect.value="";
+    courseSelect.disabled=!deptId || !hasMatchingCourse;
+
+    if(!deptId){
+        placeholderOption.text="Select Department First";
+    }else if(!hasMatchingCourse){
+        placeholderOption.text="No Courses Available";
+    }else{
+        placeholderOption.text="Select Course";
+    }
+    
+    updateAllCourseSelects();
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+    document.querySelectorAll(".course-row").forEach(updateCourseOptions);
+    document.querySelectorAll(".phone-like-input").forEach(function(input){
+        input.addEventListener("input", function(){
+            let value = this.value.replace(/[^\d+]/g, "");
+            if (value.startsWith("+")) {
+                value = "+" + value.slice(1).replace(/\+/g, "");
+            } else {
+                value = value.replace(/\+/g, "");
+            }
+            this.value = value;
+        });
+    });
+});
+</script>
+
+
+<!-- ================= CONFIRM CREATE LEAD MODAL ================= -->
+<div class="modal fade" id="confirmCreateLeadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;">
+
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-semibold">Confirm Lead Creation</h5>
+                <button type="button" class="btn-close"
+                        onclick="bootstrap.Modal.getInstance(document.getElementById('confirmCreateLeadModal')).hide();">
+                </button>
+            </div>
+
+            <div class="modal-body text-center px-4">
+                <i class="feather-alert-circle"
+                   style="font-size:48px;color:#f59e0b;"></i>
+
+                <p class="mt-3 mb-1 fw-semibold">
+                    Are you sure you want to save this lead?
+                </p>
+
+                <small class="text-muted">
+                    Please verify all details before proceeding.
+                </small>
+            </div>
+
+            <div class="modal-footer border-0 justify-content-center gap-3 pb-4">
+                <button type="button"
+                        class="btn btn-outline-secondary px-4"
+                        onclick="bootstrap.Modal.getInstance(document.getElementById('confirmCreateLeadModal')).hide();">
+                    Back
+                </button>
+
+                <!-- REAL SUBMIT -->
+                <button type="submit"
+                        form="createLeadForm"
+                        class="btn btn-dark px-4">
+                    <i class="feather-check me-1"></i> Proceed
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border-right: 0;
+}
+
+.input-group .form-control {
+    border-left: 0;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.modal-backdrop.show {
+    opacity: 0.6;
+}
+</style>
+
+<!-- ================= IMPORT EXCEL MODAL ================= -->
+<div class="modal fade" id="importExcelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST"
+              action="{% url 'import_leads_excel' %}"
+              enctype="multipart/form-data"
+              class="modal-content">
+
+            {% csrf_token %}
+
+            <div class="modal-header">
+                <h5 class="modal-title">Import Leads from Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <label class="form-label">Upload Excel File (.xlsx)</label>
+                <input type="file"
+                       name="excel_file"
+                       class="form-control"
+                       accept=".xlsx"
+                       required>
+
+                <small class="text-muted d-block mt-2">
+                    Columns required:
+                    <br>
+                    <b>name, email/phone(Optional: date, qualification, source, address, location)</b>
+                </small>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">
+                    Import Leads
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}

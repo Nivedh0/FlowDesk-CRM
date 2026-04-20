@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zxx">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>FlowDesk || Login Cover</title>
+
+    <link rel="shortcut icon" href="{% static 'assets/images/flowicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/vendors/css/vendors.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/theme.min.css' %}">
+
+    <style>
+        /* Professional CRM Styling Enhancements */
+        :root {
+            --crm-primary: #4f46e5;
+            --crm-text-dark: #111827;
+            --crm-text-muted: #6b7280;
+            --crm-border: #e5e7eb;
+        }
+
+        body {
+            background-color: #f9fafb;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .auth-cover-sidebar-inner {
+            background: #ffffff;
+            box-shadow: -10px 0 50px rgba(0,0,0,0.05);
+        }
+
+        .auth-cover-card {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .form-control {
+            height: 48px;
+            border-radius: 8px;
+            border: 1.5px solid var(--crm-border);
+            padding: 10px 16px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            color: var(--crm-text-dark);
+        }
+
+        .form-control:focus {
+            border-color: var(--crm-primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--crm-primary);
+            border: none;
+            height: 48px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+            transition: transform 0.1s active;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338ca;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        .auth-img img {
+            max-width: 85%;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.08));
+        }
+
+        .custom-control-label {
+            font-size: 14px;
+            color: var(--crm-text-muted);
+            user-select: none;
+        }
+
+        h2 { color: var(--crm-text-dark); letter-spacing: -0.5px; }
+        h4 { color: var(--crm-text-muted); font-weight: 400 !important; }
+
+        /* Smooth Transition for Caps Lock */
+        #capsWarning {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="auth-cover-wrapper">
+
+    <div class="auth-cover-content-inner">
+        {% comment %} <div class="auth-cover-content-wrapper">
+            <div class="auth-img">
+                <img src="{% static 'assets/images/auth/auth-cover-login-bg-1.png' %}" class="img-fluid" alt="Background">
+            </div>
+        </div> {% endcomment %}
+
+            <div style="width:100%; height:100vh;">
+                <img
+                    src="{% static 'assets/images/auth/auth-cover-login-bg-1.png' %}"
+                    alt="FlowDesk Login"
+                    style="
+                        width:100%;
+                        height:100%;
+                        object-fit:cover;
+                        object-position:center;
+                        display:block;
+                    "
+                >
+            </div>
+
+
+    </div>
+
+    <div class="auth-cover-sidebar-inner">
+        <div class="auth-cover-card-wrapper">
+            <div class="auth-cover-card p-sm-5 p-4">
+
+                <div class="wd-50 mb-5">
+                    <img src="{% static 'assets/images/floww-logo-f.png' %}" class="img-fluid" alt="Logo">
+                </div>
+
+                <h2 class="fs-24 fw-bolder mb-2">Welcome Back</h2>
+                <h4 class="fs-14 mb-4">Please enter your details to access your CRM dashboard.</h4>
+
+                <form method="POST" class="w-100 mt-2">
+                    {% csrf_token %}
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger py-2 fs-13 alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold fs-12 text-uppercase text-muted">Email or Username</label>
+                        <input type="text"
+                               name="username"
+                               class="form-control"
+                               placeholder="e.g. admin@duralux.com"
+                               required>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold fs-12 text-uppercase text-muted">Password</label>
+                        <div class="position-relative">
+                            <input type="password"
+                                   name="password"
+                                   id="password"
+                                   class="form-control"
+                                   placeholder="••••••••"
+                                   required>
+
+                            <span onclick="togglePassword()"
+                                  style="
+                                      position:absolute;
+                                      right:14px;
+                                      top:50%;
+                                      transform:translateY(-50%);
+                                      cursor:pointer;
+                                      color:#9ca3af;">
+                                <i id="eyeIcon" class="feather-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div id="capsWarning"
+                         style="
+                             display:none;
+                             font-size:12px;
+                             color:#b45309;
+                             font-weight:500;
+                             margin-bottom:12px;">
+                        <i class="feather-alert-triangle me-1"></i> Caps Lock is active
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="rememberMe">
+                            <label class="custom-control-label c-pointer" for="rememberMe">
+                                Keep me logged in
+                            </label>
+                        </div>
+
+                        <a href="#"
+                           id="forgotPasswordLink"
+                           style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit"
+                                id="loginBtn"
+                                class="btn btn-lg btn-primary w-100 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <span id="btnText">Login</span>
+                            <span id="btnSpinner"
+                                style="
+                                    display:none;
+                                    width:18px;
+                                    height:18px;
+                                    border:2px solid rgba(255,255,255,.4);
+                                    border-top-color:#fff;
+                                    border-radius:50%;
+                                    animation:spin .8s linear infinite;">
+                            </span>
+                        </button>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+document.querySelector("form").addEventListener("submit", function () {
+    const btn = document.getElementById("loginBtn");
+    const text = document.getElementById("btnText");
+    const spinner = document.getElementById("btnSpinner");
+
+    btn.disabled = true;
+    text.textContent = "Logging in...";
+    spinner.style.display = "inline-block";
+});
+</script>
+
+
+<script>
+function togglePassword() {
+    const password = document.getElementById("password");
+    const eyeIcon = document.getElementById("eyeIcon");
+
+    if (password.type === "password") {
+        password.type = "text";
+        eyeIcon.classList.replace("feather-eye", "feather-eye-off");
+    } else {
+        password.type = "password";
+        eyeIcon.classList.replace("feather-eye-off", "feather-eye");
+    }
+}
+
+const passwordInput = document.getElementById("password");
+const capsWarning = document.getElementById("capsWarning");
+const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+
+passwordInput.addEventListener("keyup", function (e) {
+    if (e.getModifierState("CapsLock")) {
+        capsWarning.style.display = "block";
+    } else {
+        capsWarning.style.display = "none";
+    }
+});
+
+if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        const usernameField = document.querySelector('input[name="username"]');
+        const username = usernameField ? usernameField.value.trim() : "";
+        const baseUrl = "{% url 'password_reset' %}";
+        const targetUrl = username ? `${baseUrl}?username=${encodeURIComponent(username)}` : baseUrl;
+        window.location.href = targetUrl;
+    });
+}
+</script>
+
+</body>
+</html>

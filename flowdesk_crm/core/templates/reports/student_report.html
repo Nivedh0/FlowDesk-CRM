@@ -1,0 +1,834 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Student Report{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Student Report</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Student Report</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex gap-2">
+            <a href="{% url 'student_report_export' %}" id="exportExcelBtn" class="btn btn-success">
+                <i class="feather-download me-1"></i>Download Excel
+            </a>
+        </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-1">Student Report</h5>
+            <p class="text-muted mb-0">Student-wise metrics and performance tracking.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- [Mini Cards] start -->
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Total Students</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ total_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-success">
+                            <i class="feather-users fs-12"></i>
+                            <span>All</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Active Students</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ active_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-success">
+                            <i class="feather-check-circle fs-12"></i>
+                            <span>Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Completed</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ completed_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-primary">
+                            <i class="feather-award fs-12"></i>
+                            <span>Done</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">With Batch</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ with_batch_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if with_batch_count > 0 %}text-info{% else %}text-muted{% endif %}">
+                            <i class="feather-layers fs-12"></i>
+                            <span>Assigned</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Recent (7d)</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ recent_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if recent_count > 0 %}text-danger{% else %}text-muted{% endif %}">
+                            <i class="feather-trending-up fs-12"></i>
+                            <span>New</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Enrolled Today</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ today_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 {% if today_count > 0 %}text-warning{% else %}text-muted{% endif %}">
+                            <i class="feather-calendar fs-12"></i>
+                            <span>Today</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [Mini Cards] end -->
+        <!-- [Student Status Distribution] start -->
+        <div class="col-xxl-6">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Student Status Distribution</h5>
+                    <div class="card-header-action">
+                        <div class="card-header-btn">
+                            <div data-bs-toggle="tooltip" title="Delete">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove"> </a>
+                            </div>
+                            <div data-bs-toggle="tooltip" title="Refresh">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" data-bs-toggle="refresh"> </a>
+                            </div>
+                            <div data-bs-toggle="tooltip" title="Maximize/Minimize">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success" data-bs-toggle="expand"> </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body custom-card-action">
+                    <div id="student-status-chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- [Student Status Distribution] end -->
+        <!-- [Department Distribution] start -->
+        <div class="col-xxl-6">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Department Distribution</h5>
+                    <div class="card-header-action">
+                        <div class="card-header-btn">
+                            <div data-bs-toggle="tooltip" title="Delete">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove"> </a>
+                            </div>
+                            <div data-bs-toggle="tooltip" title="Refresh">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" data-bs-toggle="refresh"> </a>
+                            </div>
+                            <div data-bs-toggle="tooltip" title="Maximize/Minimize">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success" data-bs-toggle="expand"> </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body custom-card-action">
+                    <div id="department-distribution-chart"></div>
+                    <div class="mt-4">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th class="text-center">Courses</th>
+                                    <th class="text-center">Batches</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in department_distribution %}
+                                <tr>
+                                    <td>{{ item.department_name }}</td>
+                                    <td class="text-center"><span class="badge bg-soft-primary text-primary">{{ item.courses_count }}</span></td>
+                                    <td class="text-center"><span class="badge bg-soft-info text-info">{{ item.total_batches }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [Department Distribution] end -->
+
+        <!-- [Filter Panel] start -->
+        <div class="col-12">
+            <div class="collapse" id="studentReportFilterPanel">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Search</label>
+                                <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Name / Email / Mobile">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Enrolled From</label>
+                                <input type="date" name="enrolled_from" value="{{ request.GET.enrolled_from }}" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Enrolled To</label>
+                                <input type="date" name="enrolled_to" value="{{ request.GET.enrolled_to }}" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">All</option>
+                                    {% for key, label in status_choices %}
+                                    <option value="{{ key }}" {% if request.GET.status == key %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Department</label>
+                                <select name="department" class="form-select">
+                                    <option value="">All</option>
+                                    {% for d in departments %}
+                                    <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Course</label>
+                                <select name="course" class="form-select">
+                                    <option value="">All</option>
+                                    {% for c in courses %}
+                                    <option value="{{ c.id }}" {% if request.GET.course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.course_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Batch</label>
+                                <select name="batch" class="form-select">
+                                    <option value="">All</option>
+                                    {% for b in batches %}
+                                    <option value="{{ b.id }}" {% if request.GET.batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.batch_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Per Page</label>
+                                <select name="per_page" class="form-select">
+                                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 d-flex justify-content-end gap-2">
+                                <button class="btn btn-primary" type="submit">Apply Filter</button>
+                                <a href="{% url 'student_report' %}" class="btn btn-outline-secondary">Clear</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [Filter Panel] end -->
+
+        <!-- [Student Details Table] start -->
+        <div class="col-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Student Details</h5>
+                    <div class="card-header-action">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#studentReportFilterPanel">
+                                <i class="feather-filter me-1"></i>Filter
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="new bootstrap.Modal(document.getElementById('columnSettingsModal')).show()">
+                                <i class="feather-settings"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="studentReportTable">
+                                <thead>
+                                    <tr>
+                                        <th data-col="student_id">Student ID</th>
+                                        <th data-col="name">Name</th>
+                                        <th data-col="email">Email</th>
+                                        <th data-col="mobile">Mobile</th>
+                                        <th data-col="department">Department</th>
+                                        <th data-col="course">Course</th>
+                                        <th data-col="batch">Batch</th>
+                                        <th data-col="status">Status</th>
+                                        <th data-col="enrolled_date">Enrolled Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td data-col="student_id">{{ student.id }}</td>
+                                        <td data-col="name">
+                                            <a href="{% url 'student_individual_report' student.id %}" class="text-decoration-none">
+                                                {{ student.student_name }}
+                                            </a>
+                                        </td>
+                                        <td data-col="email">{{ student.email|default:"-" }}</td>
+                                        <td data-col="mobile">{{ student.mobile }}</td>
+                                        <td data-col="department">
+                                            {% for sc in student.student_courses.all %}
+                                                <span class="badge bg-info">{{ sc.department.department_name }}</span>
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                        <td data-col="course">
+                                            {% for sc in student.student_courses.all %}
+                                                <span class="badge bg-primary">{{ sc.course.course_name }}</span>
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                        <td data-col="batch">
+                                            {% for sc in student.student_courses.all %}
+                                                {% if sc.batch %}<span class="badge bg-success">{{ sc.batch.batch_name }}</span>{% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                        <td data-col="status">{{ student.get_status_display }}</td>
+                                        <td data-col="enrolled_date">{{ student.enrolled_date|date:"d M Y"|default:"-" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="9" class="text-center text-muted py-4">No students found.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {% if page_obj.paginator.num_pages > 1 %}
+                <div class="pagination-row">
+                    <!-- PAGINATOR -->
+                    <nav class="pagination-glass">
+                        <ul class="pagination pagination-modern mb-0">
+                            <!-- PREVIOUS -->
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                    ‹ Previous
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">‹ Previous</span>
+                            </li>
+                            {% endif %}
+
+                            <!-- PAGE NUMBERS -->
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                    <a class="page-link"
+                                    href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- NEXT -->
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                    Next ›
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next ›</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+
+                    <!-- INFO TEXT -->
+                    <div class="pagination-info">
+                        Showing
+                        <strong>{{ page_obj.start_index }}</strong>
+                        –
+                        <strong>{{ page_obj.end_index }}</strong>
+                        of
+                        <strong>{{ paginator.count }}</strong>
+                        students
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- [Student Details Table] end -->
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;">
+            <div class="modal-header">
+                <h5 class="modal-title">Table Columns</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-semibold mb-0">Visible Columns</h6>
+                    <label class="d-flex align-items-center gap-2 text-primary fw-semibold cursor-pointer">
+                        <input type="checkbox" id="selectAllColumns">
+                        Select All
+                    </label>
+                </div>
+                <hr class="my-2">
+                <div class="row g-3">
+                    <div class="col-md-6 column-group">
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="student_id" checked>
+                            <span>Student ID</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="name" checked>
+                            <span>Name</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="email" checked>
+                            <span>Email</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="mobile" checked>
+                            <span>Mobile</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="enrolled_date" checked>
+                            <span>Enrolled Date</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="department" checked>
+                            <span>Department</span>
+                        </label>
+                    </div>
+                    <div class="col-md-6 column-group">
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="course" checked>
+                            <span>Course</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="batch" checked>
+                            <span>Batch</span>
+                        </label>
+                        <label class="column-item">
+                            <input type="checkbox" class="column-toggle" data-col="status" checked>
+                            <span>Status</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" onclick="cancelColumnSettings()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyColumnSettings()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.column-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.column-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.column-item:hover {
+    background: #f1f5f9;
+}
+
+.column-item input {
+    transform: scale(1.1);
+}
+
+.column-item span {
+    font-weight: 500;
+    color: #334155;
+}
+
+#selectAllColumns {
+    transform: scale(1.15);
+}
+
+/* ================= PAGINATION STYLES ================= */
+
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggles = document.querySelectorAll(".column-toggle");
+    const selectAllCheckbox = document.getElementById("selectAllColumns");
+    let savedColumnState = {};
+
+    function getCurrentState() {
+        const state = {};
+        toggles.forEach(t => {
+            state[t.dataset.col] = t.checked;
+        });
+        return state;
+    }
+
+    function setState(state) {
+        toggles.forEach(t => {
+            if (state.hasOwnProperty(t.dataset.col)) {
+                t.checked = state[t.dataset.col];
+            }
+        });
+    }
+
+    function applyColumnVisibility() {
+        toggles.forEach(toggle => {
+            const col = toggle.dataset.col;
+            const show = toggle.checked;
+
+            document
+                .querySelectorAll(`#studentReportTable th[data-col="${col}"]`)
+                .forEach(el => el.style.display = show ? "" : "none");
+
+            document
+                .querySelectorAll(`#studentReportTable td[data-col="${col}"]`)
+                .forEach(el => el.style.display = show ? "" : "none");
+        });
+    }
+
+    function syncSelectAll() {
+        const allChecked = Array.from(toggles).every(t => t.checked);
+        const noneChecked = Array.from(toggles).every(t => !t.checked);
+
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = !allChecked && !noneChecked;
+    }
+
+    selectAllCheckbox.addEventListener("change", function () {
+        toggles.forEach(t => {
+            t.checked = this.checked;
+        });
+    });
+
+    toggles.forEach(t => {
+        t.addEventListener("change", syncSelectAll);
+    });
+
+    window.applyColumnSettings = function () {
+        savedColumnState = getCurrentState();
+        applyColumnVisibility();
+        updateExportLink();
+        bootstrap.Modal.getInstance(
+            document.getElementById("columnSettingsModal")
+        ).hide();
+    };
+
+    window.cancelColumnSettings = function () {
+        setState(savedColumnState);
+        bootstrap.Modal.getInstance(
+            document.getElementById("columnSettingsModal")
+        ).hide();
+    };
+
+    function updateExportLink() {
+        const visibleColumns = [];
+        toggles.forEach(t => {
+            if (t.checked) {
+                visibleColumns.push(t.dataset.col);
+            }
+        });
+        
+        const baseUrl = "{% url 'student_report_export' %}";
+        const params = new URLSearchParams(window.location.search);
+        
+        params.delete('columns');
+        
+        visibleColumns.forEach(col => {
+            params.append('columns', col);
+        });
+        
+        const exportBtn = document.getElementById('exportExcelBtn');
+        exportBtn.href = baseUrl + '?' + params.toString();
+    }
+
+    savedColumnState = getCurrentState();
+    syncSelectAll();
+    updateExportLink();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.textContent);
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                counter.textContent = target;
+                clearInterval(timer);
+            } else {
+                counter.textContent = Math.floor(current);
+            }
+        }, 20);
+    });
+
+    // Student Status Distribution Chart
+    const statusData = [
+        {% for item in status_distribution %}
+        { name: '{{ item.status|default:"Unknown" }}', value: {{ item.count }} }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (statusData.length > 0 && typeof ApexCharts !== 'undefined') {
+        const statusChart = new ApexCharts(document.querySelector("#student-status-chart"), {
+            series: statusData.map(item => item.value),
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            labels: statusData.map(item => item.name),
+            colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+            legend: {
+                position: 'bottom'
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return Math.round(val) + '%';
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%'
+                    }
+                }
+            }
+        });
+        statusChart.render();
+    }
+
+    // Department Distribution Chart
+    const departmentData = [
+        {% for item in department_distribution %}
+        { 
+            name: '{{ item.department_name }}', 
+            courses: {{ item.courses_count }},
+            batches: {{ item.total_batches }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (departmentData.length > 0 && typeof ApexCharts !== 'undefined') {
+        const departmentChart = new ApexCharts(document.querySelector("#department-distribution-chart"), {
+            series: departmentData.map(item => item.courses),
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            labels: departmentData.map(item => item.name),
+            colors: ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#ec4899'],
+            legend: {
+                position: 'bottom'
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return Math.round(val) + '%';
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%',
+                        labels: {
+                            show: true,
+                            name: {
+                                show: true,
+                                fontSize: '14px',
+                                fontWeight: 600
+                            },
+                            value: {
+                                show: true,
+                                fontSize: '20px',
+                                fontWeight: 700,
+                                formatter: function(val) {
+                                    return val + ' Courses';
+                                }
+                            },
+                            total: {
+                                show: true,
+                                label: 'Total Courses',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                formatter: function(w) {
+                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function(val, opts) {
+                        const index = opts.seriesIndex;
+                        const dept = departmentData[index];
+                        return val + ' Courses | ' + dept.batches + ' Batches';
+                    }
+                }
+            }
+        });
+        departmentChart.render();
+    }
+});
+</script>
+{% endblock %}

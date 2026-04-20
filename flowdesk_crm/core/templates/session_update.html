@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Session Update</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Session Update</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .card { border: 1px solid #e5e7eb; border-radius: 0.5rem; }
+    .btn { border-radius: 0.375rem; }
+    .analytics-card { background: #f8f9fa; border-radius: 0.5rem; padding: 1rem; }
+    #topicsContainer .topic-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+    .topics-filter-bar { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; }
+
+    html.app-skin-dark .analytics-card {
+        background: var(--fd-dark-surface-2) !important;
+        color: var(--fd-dark-text) !important;
+    }
+    html.app-skin-dark #topicsContainer .topic-card {
+        border-color: var(--fd-dark-border) !important;
+        background: var(--fd-dark-surface-1) !important;
+        color: var(--fd-dark-text) !important;
+    }
+    html.app-skin-dark .topics-filter-bar {
+        background: var(--fd-dark-surface-2) !important;
+        border-color: var(--fd-dark-border) !important;
+    }
+    html.app-skin-dark .module-block .badge.bg-light {
+        background: var(--fd-dark-surface-2) !important;
+        color: var(--fd-dark-text) !important;
+        border-color: var(--fd-dark-border) !important;
+    }
+</style>
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="card-body">
+                        <div class="mb-4 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Session Details :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select batch and session date — all modules shown, use filter to focus on one</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Batch: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="batch" id="batchSelect" class="form-control" required>
+                                    <option value="">Select Batch</option>
+                                    {% for batch in batches %}
+                                    <option value="{{ batch.id }}">{{ batch.batch_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Filter by Module:</label>
+                            </div>
+                            <div class="col-lg-8">
+                                <select name="module" id="moduleSelect" class="form-control" disabled>
+                                    <option value="">All Modules</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Session Date: <span class="text-danger">*</span></label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                    <input type="date" name="session_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Remarks:</label>
+                            </div>
+                            <div class="col-lg-8">
+                                <textarea name="remarks" class="form-control" rows="2" placeholder="Enter remarks for this session"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <div class="card-body">
+                        <div class="mb-4 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Assignment :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Assign tasks</span>
+                            </h5>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-4">
+                                <label class="fw-semibold">Assignment/Tasks:</label>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <div class="input-group-text"><i class="feather-file-text"></i></div>
+                                    <input type="text" name="assignment_given" id="assignmentGiven" class="form-control" placeholder="Enter assignment or tasks given">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="assignmentDetails" style="display:none;">
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Description:</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <textarea name="assignment_description" class="form-control" rows="2" placeholder="Enter assignment description"></textarea>
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Due Date:</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-calendar"></i></div>
+                                        <input type="date" name="assignment_due_date" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Marks:</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-award"></i></div>
+                                        <input type="number" name="assignment_marks" id="assignmentMarks" class="form-control" min="0" placeholder="Enter assignment marks">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0">
+
+                    <div class="card-body">
+                        <div class="mb-4 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 me-4">
+                                <span class="d-block mb-2">Session Analytics :</span>
+                                <span class="fs-12 fw-normal text-muted text-truncate-1-line">Track progress and completion</span>
+                            </h5>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="analytics-card">
+                                    <h6 class="mb-3 fw-semibold">Session Progress Analytics</h6>
+                                    <div id="sessionStats">
+                                        <p class="text-muted mb-0">Select a batch to view analytics</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="analytics-card">
+                                    <h6 class="mb-3 fw-semibold">Module Completion Tracker</h6>
+                                    <div id="moduleProgress">
+                                        <p class="text-muted mb-0">Select a batch to view module progress</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="topicsContainer"></div>
+
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="feather-save me-1"></i> Save Session Update
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let modulesData = {};
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function syncTopicDraftValues() {
+    Object.values(modulesData).forEach(topics => {
+        topics.forEach(topic => {
+            const statusField = document.querySelector(`[name="status_${topic.id}"]`);
+            const remarksField = document.querySelector(`[name="remarks_${topic.id}"]`);
+            if (statusField) topic.status = statusField.value;
+            if (remarksField) topic.remarks = remarksField.value;
+        });
+    });
+}
+
+function renderTopics() {
+    const container = document.getElementById("topicsContainer");
+    syncTopicDraftValues();
+
+    const searchText = (document.getElementById("topicSearchFilter")?.value || "").trim().toLowerCase();
+    const statusFilter = document.getElementById("topicStatusFilter")?.value || "";
+    const moduleFilter = document.getElementById("moduleSelect")?.value || "";
+
+    if (!Object.keys(modulesData).length) {
+        container.innerHTML = "";
+        return;
+    }
+
+    // Build module jump dropdown options
+    const moduleSelect = document.getElementById("moduleSelect");
+    moduleSelect.innerHTML = '<option value="">All Modules</option>';
+    Object.keys(modulesData).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        moduleSelect.appendChild(opt);
+    });
+    moduleSelect.value = moduleFilter;
+
+    let html = `
+        <div class="card-body">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-0">
+                    <span class="d-block mb-2">Topics :</span>
+                    <span class="fs-12 fw-normal text-muted">All modules shown — mark progress across any module in this session</span>
+                </h5>
+            </div>
+            <div class="topics-filter-bar">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Status Filter</label>
+                        <select id="topicStatusFilter" class="form-control">
+                            <option value="">Any Status</option>
+                            <option value="not_started">Not Started</option>
+                            <option value="partial">Partial</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Search Topic</label>
+                        <input type="text" id="topicSearchFilter" class="form-control" placeholder="Search by topic name">
+                    </div>
+                </div>
+            </div>
+    `;
+
+    Object.entries(modulesData).forEach(([moduleName, topics], moduleIndex) => {
+        if (moduleFilter && moduleName !== moduleFilter) return;
+        const filteredTopics = topics.filter(topic => {
+            if (statusFilter && topic.status !== statusFilter) return false;
+            if (searchText && !topic.name.toLowerCase().includes(searchText)) return false;
+            return true;
+        });
+
+        const moduleId = `module-block-${moduleIndex}`;
+        const completedCount = topics.filter(t => t.status === 'completed').length;
+        const pct = topics.length > 0 ? Math.round((completedCount / topics.length) * 100) : 0;
+
+        html += `
+            <div class="module-block mb-3" id="${moduleId}" data-module-name="${escapeHtml(moduleName)}">
+                <div class="d-flex align-items-center justify-content-between px-1 mb-2" style="cursor:pointer;" onclick="toggleModule('${moduleId}')">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="feather-chevron-down module-chevron" id="chevron-${moduleId}" style="transition:transform 0.2s;"></i>
+                        <span class="fw-semibold">${escapeHtml(moduleName)}</span>
+                        <span class="badge bg-light text-dark border">${completedCount}/${topics.length} done</span>
+                    </div>
+                    <div style="width:120px;">
+                        <div class="progress" style="height:8px;">
+                            <div class="progress-bar bg-success" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="module-topics" id="topics-${moduleId}">
+        `;
+
+        if (filteredTopics.length) {
+            filteredTopics.forEach(topic => {
+                html += `
+                    <div class="topic-card" data-topic-id="${topic.id}">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                            <h6 class="fw-semibold mb-0">${escapeHtml(topic.name)}</h6>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <select name="status_${topic.id}" class="form-control topic-status-select">
+                                    <option value="not_started" ${topic.status === 'not_started' ? 'selected' : ''}>Not Started</option>
+                                    <option value="partial" ${topic.status === 'partial' ? 'selected' : ''}>Partial</option>
+                                    <option value="completed" ${topic.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8 mb-2">
+                                <input type="text" name="remarks_${topic.id}"
+                                       value="${escapeHtml(topic.remarks || '')}"
+                                       class="form-control"
+                                       placeholder="Enter remarks">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html += `<div class="text-center py-3 text-muted small">No topics match the current filter in this module.</div>`;
+        }
+
+        html += `</div></div>`; // close module-topics + module-block
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Restore filter values and re-attach listeners
+    const statusEl = document.getElementById("topicStatusFilter");
+    const searchEl = document.getElementById("topicSearchFilter");
+    if (statusEl) { statusEl.value = statusFilter; statusEl.addEventListener("change", renderTopics); }
+    if (searchEl) { searchEl.value = searchText; searchEl.addEventListener("input", renderTopics); }
+
+    container.querySelectorAll('.topic-status-select').forEach(sel => {
+        sel.addEventListener("change", function () { syncTopicDraftValues(); updateAnalytics(); });
+    });
+    container.querySelectorAll('input[name^="remarks_"]').forEach(inp => {
+        inp.addEventListener("input", syncTopicDraftValues);
+    });
+}
+
+function toggleModule(moduleId) {
+    const topicsEl = document.getElementById('topics-' + moduleId);
+    const chevron = document.getElementById('chevron-' + moduleId);
+    const isOpen = topicsEl.style.display !== 'none';
+    topicsEl.style.display = isOpen ? 'none' : '';
+    chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+
+document.getElementById("batchSelect").addEventListener("change", function () {
+    const batchId = this.value;
+    const moduleSelect = document.getElementById("moduleSelect");
+    const topicsContainer = document.getElementById("topicsContainer");
+
+    moduleSelect.innerHTML = '<option value="">Select Module</option>';
+    moduleSelect.disabled = true;
+    topicsContainer.innerHTML = "";
+    modulesData = {};
+
+    if (!batchId) {
+        document.getElementById('sessionStats').innerHTML = '<p class="text-muted mb-0">Select a batch to view analytics</p>';
+        document.getElementById('moduleProgress').innerHTML = '<p class="text-muted mb-0">Select a batch to view module progress</p>';
+        return;
+    }
+
+    fetch(`/get-batch-topics/?batch_id=${batchId}`)
+        .then(r => r.json())
+        .then(data => {
+            data.topics.forEach(topic => {
+                if (!modulesData[topic.module]) modulesData[topic.module] = [];
+                modulesData[topic.module].push(topic);
+            });
+            moduleSelect.disabled = false;
+            updateAnalytics();
+            renderTopics();
+        });
+});
+
+document.getElementById("moduleSelect").addEventListener("change", renderTopics);
+
+function updateAnalytics() {
+    const allTopics = [];
+    Object.values(modulesData).forEach(topics => allTopics.push(...topics));
+
+    const completed = allTopics.filter(t => t.status === 'completed').length;
+    const partial = allTopics.filter(t => t.status === 'partial').length;
+    const notStarted = allTopics.filter(t => t.status === 'not_started').length;
+    const total = allTopics.length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    document.getElementById('sessionStats').innerHTML = `
+        <div class="mb-2"><strong>Total Topics:</strong> ${total}</div>
+        <div class="mb-2"><strong>Completed:</strong> <span class="text-success">${completed}</span></div>
+        <div class="mb-2"><strong>Partial:</strong> <span class="text-warning">${partial}</span></div>
+        <div class="mb-2"><strong>Not Started:</strong> <span class="text-danger">${notStarted}</span></div>
+        <div class="progress mt-3" style="height:25px;">
+            <div class="progress-bar bg-success" style="width:${pct}%">${pct}%</div>
+        </div>
+    `;
+
+    let moduleProgressHTML = '';
+    Object.keys(modulesData).forEach(moduleName => {
+        const topics = modulesData[moduleName];
+        const modCompleted = topics.filter(t => t.status === 'completed').length;
+        const modTotal = topics.length;
+        const modPct = modTotal > 0 ? Math.round((modCompleted / modTotal) * 100) : 0;
+        moduleProgressHTML += `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small><strong>${escapeHtml(moduleName)}</strong></small>
+                    <small>${modCompleted}/${modTotal}</small>
+                </div>
+                <div class="progress" style="height:20px;">
+                    <div class="progress-bar" style="width:${modPct}%;background-color:${modPct === 100 ? '#28a745' : '#007bff'}">${modPct}%</div>
+                </div>
+            </div>
+        `;
+    });
+    document.getElementById('moduleProgress').innerHTML = moduleProgressHTML;
+}
+
+document.getElementById('assignmentGiven').addEventListener('input', function () {
+    const details = document.getElementById('assignmentDetails');
+    const marks = document.getElementById('assignmentMarks');
+    if (this.value.trim()) {
+        details.style.display = 'block';
+        if (marks) marks.required = true;
+    } else {
+        details.style.display = 'none';
+        if (marks) { marks.required = false; marks.value = ''; }
+    }
+});
+</script>
+
+{% endblock %}

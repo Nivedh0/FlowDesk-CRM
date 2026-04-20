@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Assignment Confirmation</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4f46e5; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .section { margin-bottom: 25px; background: white; padding: 15px; border-radius: 5px; }
+        .section h3 { color: #4f46e5; margin-top: 0; }
+        .fee-table, .installment-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .fee-table th, .fee-table td, .installment-table th, .installment-table td { 
+            border: 1px solid #ddd; padding: 8px; text-align: left; 
+        }
+        .fee-table th, .installment-table th { background: #f4f4f4; }
+        .module-list { list-style: none; padding: 0; }
+        .module-item { background: #f8f9fa; margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .topic-list { margin-top: 8px; padding-left: 15px; }
+        .student-id-highlight {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #eef2ff;
+            border-left: 4px solid #4f46e5;
+            color: #312e81;
+            font-weight: 600;
+        }
+        .student-id-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: #1f2937;
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to {{ company_name }}!</h1>
+            <p>Batch Assignment Confirmation</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h3>Dear {{ student.student_name }},</h3>
+                <p>Congratulations! You have been successfully assigned to a batch. Here are your course details:</p>
+                <div class="student-id-highlight">
+                    Student ID <span class="student-id-badge">#{{ student.id }}</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📚 Course Information</h3>
+                <p><strong>Course:</strong> {{ course.course_name }}</p>
+                <p><strong>Department:</strong> {{ department.department_name }}</p>
+                <p><strong>Duration:</strong> {{ course.duration_months }} months</p>
+                <p><strong>Batch:</strong> {{ batch.batch_name }}</p>
+                <p><strong>Trainer:</strong> {{ batch.trainer.user.get_full_name|default:batch.trainer.user.username }}</p>
+                <p><strong>Mode:</strong> {{ batch.mode }}</p>
+                <p><strong>Start Date:</strong> {{ batch.start_date }}</p>
+                <p><strong>End Date:</strong> {{ batch.end_date }}</p>
+                {% if batch.start_time and batch.end_time %}
+                <p><strong>Timing:</strong> {{ batch.start_time }} - {{ batch.end_time }}</p>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h3>💰 Fee Details</h3>
+                <table class="fee-table">
+                    <tr>
+                        <th>Total Course Fee</th>
+                        <td>₹{{ fee_record.total_fee|default:"0" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Amount Paid</th>
+                        <td>₹{{ fee_record.paid_amount|default:"0" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Pending Amount</th>
+                        <td>₹{{ fee_record.pending_amount|default:fee_record.total_fee|default:"0" }}</td>
+                    </tr>
+                    {% if fee_record.due_date %}
+                    <tr>
+                        <th>Payment Due Date</th>
+                        <td>{{ fee_record.due_date }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Payment Status</th>
+                        <td>{{ fee_record.get_fee_status_display|default:"Pending" }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>📅 Installment Schedule</h3>
+                {% if installments %}
+                <table class="installment-table">
+                    <thead>
+                        <tr>
+                            <th>Installment #</th>
+                            <th>Amount</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for installment in installments %}
+                        <tr>
+                            <td>{{ installment.installment_number }}</td>
+                            <td>₹{{ installment.amount }}</td>
+                            <td>{{ installment.due_date|default:"TBD" }}</td>
+                            <td>{{ installment.get_status_display|default:"Pending" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p><strong>Payment Mode:</strong> Full payment required</p>
+                <p>No installment plan available for this course.</p>
+                {% endif %}
+            </div>
+
+            {% if modules %}
+            <div class="section">
+                <h3>📖 Course Modules & Topics</h3>
+                <ul class="module-list">
+                    {% for module in modules %}
+                    <li class="module-item">
+                        <strong>{{ forloop.counter }}. {{ module.module_name }}</strong>
+                        {% if module.topic_set.all %}
+                        <ul class="topic-list">
+                            {% for topic in module.topic_set.all %}
+                            <li>{{ topic.topic_name }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="section">
+                <h3>📞 Contact Information</h3>
+                <p>If you have any questions or concerns, please don't hesitate to contact us:</p>
+                <p><strong>Email:</strong> support@flowdesk.com</p>
+                <p><strong>Phone:</strong> +91 9876543210</p>
+            </div>
+
+            <div class="section">
+                <p>We're excited to have you on board and look forward to your successful completion of the course!</p>
+                <p>Best regards,<br>{{ company_name }} Team</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 {{ company_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

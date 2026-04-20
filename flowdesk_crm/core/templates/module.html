@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% block title %}Modules{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Modules</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Modules</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+
+            <!-- ================= CARD ================= -->
+            <div class="card" style="border-radius:16px;border:none;box-shadow:0 20px 40px rgba(0,0,0,.06);">
+                <div class="card-body">
+
+                    <!-- ================= MESSAGES ================= -->
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mb-3">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- ================= ADD MODULE ================= -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+                        <span style="width:4px;height:22px;background:#4f46e5;border-radius:2px;"></span>
+                        <h5 style="margin:0;">Add Module</h5>
+                    </div>
+
+                    <form method="post" class="mb-5">
+                        {% csrf_token %}
+                        <div class="row g-3 align-items-end">
+
+                            <!-- Course -->
+                            <div class="col-md-5">
+                                <label style="font-size:13px;font-weight:500;color:#475569;margin-bottom:4px;">
+                                    Course
+                                </label>
+                                <div style="position:relative;">
+                                    <i class="feather-book"
+                                        style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
+                                    <select name="course" class="form-control" required
+                                        style="height:48px;padding-left:42px;border-radius:10px;border:1px solid #e2e8f0;">
+                                        <option value="">Select Course</option>
+                                        {% for course in courses %}
+                                        <option value="{{ course.id }}">
+                                            {{ course.course_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Module Name -->
+                            <div class="col-md-5">
+                                <label style="font-size:13px;font-weight:500;color:#475569;margin-bottom:4px;">
+                                    Module Name
+                                </label>
+                                <div style="position:relative;">
+                                    <i class="feather-grid"
+                                        style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
+                                    <input type="text" name="module_name" class="form-control"
+                                        placeholder="Enter module name" required
+                                        style="height:48px;padding-left:42px;border-radius:10px;border:1px solid #e2e8f0;">
+                                </div>
+                            </div>
+
+                            <!-- Button -->
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-dark w-100"
+                                    style="height:48px;border-radius:10px;">
+                                    <i class="feather-plus-circle me-1"></i> Add Module
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+
+                    <!-- ================= MODULE LIST ================= -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                        <span style="width:4px;height:22px;background:#4f46e5;border-radius:2px;"></span>
+                        <h5 style="margin:0;">Module List</h5>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>#</th>
+                                    <th>Course</th>
+                                    <th>Module Name</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for module in modules %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td style="font-weight:600;">
+                                        {{ module.course.course_name }}
+                                    </td>
+                                    <td>{{ module.module_name }}</td>
+                                    <td class="text-end">
+                                        <div style="display:inline-flex;gap:8px;align-items:center;">
+                                            <!-- Edit Button -->
+                                            <button type="button" class="btn btn-sm btn-outline-primary edit-module-btn"
+                                                data-id="{{ module.id }}" data-name="{{ module.module_name }}"
+                                                data-course="{{ module.course.id }}"
+                                                style="width:36px;height:36px;border-radius:8px;padding:0;display:inline-flex;align-items:center;justify-content:center;">
+                                                <i class="feather-edit"></i>
+                                            </button>
+
+                                            <!-- Delete Form -->
+                                            <form method="post" action="{% url 'delete_module' module.id %}"
+                                                style="display:inline;margin:0;">
+                                                {% csrf_token %}
+                                                <button type="submit" onclick="return confirm('Delete this module?');"
+                                                    style="width:36px;height:36px;border:1px solid #ef4444;background:transparent;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#ef4444;padding:0;transition:all .2s ease;">
+                                                    <i class="feather-trash-2" style="font-size:16px;"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        No modules available
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            <!-- ================= END CARD ================= -->
+
+        </div>
+    </div>
+</div>
+
+<!-- Edit Module Modal -->
+<div class="modal fade" id="editModuleModal" tabindex="-1" aria-labelledby="editModuleModalLabel" aria-hidden="true"
+    data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 20px 40px rgba(0,0,0,.15);">
+            <div class="modal-header" style="border-bottom:1px solid #e2e8f0;padding:24px 24px 16px;">
+                <h5 class="modal-title" id="editModuleModalLabel" style="font-weight:600;color:#1e293b;">Edit Module
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'edit_module' %}" id="editModuleForm">
+                {% csrf_token %}
+                <input type="hidden" name="module_id" id="edit_module_id">
+                <div class="modal-body" style="padding:24px;">
+
+                    <!-- Course -->
+                    <div class="mb-4">
+                        <label style="font-size:13px;font-weight:500;color:#475569;margin-bottom:4px;">
+                            Course *
+                        </label>
+                        <div style="position:relative;">
+                            <i class="feather-book"
+                                style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
+                            <select name="course" id="edit_course" class="form-control" required
+                                style="height:48px;padding-left:42px;border-radius:10px;border:1px solid #e2e8f0;">
+                                <option value="">Select Course</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Module Name -->
+                    <div class="mb-4">
+                        <label style="font-size:13px;font-weight:500;color:#475569;margin-bottom:4px;">
+                            Module Name *
+                        </label>
+                        <div style="position:relative;">
+                            <i class="feather-grid"
+                                style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#64748b;"></i>
+                            <input type="text" name="module_name" id="edit_module_name" class="form-control"
+                                placeholder="Enter module name" required
+                                style="height:48px;padding-left:42px;border-radius:10px;border:1px solid #e2e8f0;">
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #e2e8f0;padding:16px 24px 24px;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                        style="height:42px;border-radius:8px;padding:0 20px;">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary"
+                        style="height:42px;border-radius:8px;padding:0 24px;background:#3b82f6;border-color:#3b82f6;">
+                        <i class="feather-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalElement = document.getElementById('editModuleModal');
+        let modal;
+
+        if (modalElement) {
+            modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+        }
+
+        document.querySelectorAll('.edit-module-btn').forEach(button => {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                document.getElementById('edit_module_id').value = this.dataset.id;
+                document.getElementById('edit_module_name').value = this.dataset.name;
+                document.getElementById('edit_course').value = this.dataset.course;
+
+                if (modal) {
+                    modal.show();
+                    modalElement.addEventListener('shown.bs.modal', function () {
+                        const nameInput = document.getElementById('edit_module_name');
+                        if (nameInput) {
+                            nameInput.focus();
+                        }
+                    }, { once: true });
+                }
+            });
+        });
+    });
+</script>
+<style>
+/* Remove theme blur when modal opens */
+body.modal-open .main-content,
+body.modal-open .nxl-container,
+body.modal-open .nxl-content {
+    filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Ensure modal stays above */
+.modal {
+    z-index: 1050 !important;
+}
+
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal-content {
+    z-index: 1055 !important;
+}
+</style>
+
+
+{% endblock %}

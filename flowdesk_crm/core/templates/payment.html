@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}Payments{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Payments</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Payments</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#paymentFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+                <a href="{% url 'add_payment' %}" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Add Payment</span>
+                </a>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .undo-modal .modal-content {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .undo-modal .modal-header,
+    .undo-modal .modal-footer {
+        border-color: #eef2f7;
+    }
+
+    .undo-modal .modal-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .undo-modal .modal-body {
+        color: #475569;
+        font-size: 0.92rem;
+    }
+
+    .undo-trigger {
+        text-decoration: none;
+    }
+
+    .undo-trigger:hover {
+        color: #334155 !important;
+    }
+</style>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+</style>
+
+<div class="main-content">
+   
+    <!-- ================= FILTER PANEL ================= -->
+    <div class="collapse border-bottom mb-4" id="paymentFilterPanel">
+        <div class="card card-body">
+            <form method="GET" action="{% url 'payments' %}">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Course</label>
+                        <select name="course" id="courseSelect" class="form-control">
+                            <option value="">All Courses</option>
+                            {% for c in courses %}
+                            <option value="{{ c.id }}"
+                                    {% if request.GET.course == c.id|stringformat:"s" %}selected{% endif %}>
+                                {{ c.course_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Batch</label>
+                        <select name="batch" id="batchSelect" class="form-control">
+                            <option value="">All Batches</option>
+                            {% for b in batches %}
+                            <option value="{{ b.id }}"
+                                    data-course="{{ b.course.id }}"
+                                    {% if request.GET.batch == b.id|stringformat:"s" %}selected{% endif %}>
+                                {{ b.batch_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Payment Status</label>
+                        <select name="status" class="form-control">
+                            <option value="">All Status</option>
+                            <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Paid</option>
+                            <option value="partial" {% if request.GET.status == 'partial' %}selected{% endif %}>Partial</option>
+                            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button class="btn btn-dark">Apply</button>
+                        <a href="{% url 'payments' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h5 class="mb-1">Payment List</h5>
+            <p class="text-muted mb-0">Track total fee, paid amount and pending balance.</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="card"><div class="card-body"><small class="text-muted">Total</small><h5 class="mb-0">{{ total_fees }}</h5></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="card"><div class="card-body"><small class="text-muted">Paid</small><h5 class="mb-0 text-success">{{ paid_count }}</h5></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="card"><div class="card-body"><small class="text-muted">Partial</small><h5 class="mb-0 text-primary">{{ partial_count }}</h5></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="card"><div class="card-body"><small class="text-muted">Pending</small><h5 class="mb-0 text-warning">{{ pending_count }}</h5></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="card"><div class="card-body"><small class="text-muted">Overdue</small><h5 class="mb-0 text-danger">{{ overdue_count }}</h5></div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Total Fee</th>
+                            <th>Paid</th>
+                            <th>Pending</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in fees %}
+                            <tr class="{% if fee.has_installments %}installment-parent{% endif %}" {% if fee.has_installments %}style="cursor: pointer;"{% endif %} data-fee-id="{{ fee.id }}">
+                                <td>{{ fee.student.id }}</td>
+                                <td>
+                                    {{ fee.student.student_name }}
+                                    {% if fee.has_installments %}
+                                        <span class="badge bg-soft-info text-info ms-2" style="font-size: 0.7rem;">{{ fee.installments.count }} installments</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if fee.student.course %}
+                                        <span class="badge bg-primary">{{ fee.student.course.course_name }}</span>
+                                        {% if fee.student.course.batch %}
+                                            <br><small class="text-muted">{{ fee.student.course.batch.batch_name }}</small>
+                                        {% endif %}
+                                    {% elif fee.course %}
+                                        <span class="badge bg-primary">{{ fee.course.course_name }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ fee.total_fee }}</td>
+                                <td>{{ fee.paid_amount }}</td>
+                                <td>{{ fee.pending_amount }}</td>
+                                <td>
+                                    {% if fee.calculated_due_date %}
+                                        {{ fee.calculated_due_date|date:"d M Y" }}
+                                    {% else %}
+                                        <span class="text-muted">Awaiting batch</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if fee.effective_fee_status == 'paid' %}
+                                        <span class="badge bg-soft-success text-success">Paid</span>
+                                    {% elif fee.effective_fee_status == 'partial' %}
+                                        <span class="badge bg-soft-primary text-primary">Partial</span>
+                                    {% elif fee.effective_fee_status == 'overdue' %}
+                                        <span class="badge bg-soft-danger text-danger">Overdue</span>
+                                    {% else %}
+                                        <span class="badge bg-soft-warning text-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'invoice_view_detail' fee.id %}" class="btn btn-sm btn-light">Invoice</a>
+                                    <a href="{% url 'add_payment_for_fee' fee.id %}" class="btn btn-sm btn-primary">Add</a>
+                                    {% if fee.can_undo_latest_payment and fee.latest_payment_id %}
+                                        <form method="post" action="{% url 'undo_payment' fee.latest_payment_id %}" class="d-inline undo-payment-form">
+                                            {% csrf_token %}
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-link text-muted p-0 ms-2 align-baseline undo-trigger"
+                                                title="Undo latest payment"
+                                            >
+                                                Undo
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if fee.has_installments %}
+                            <tr class="installment-row" style="display:none;" data-fee-id="{{ fee.id }}">
+                                <td colspan="9" class="bg-light">
+                                    <div class="p-3">
+                                        <h6 class="mb-3">Installment Schedule</h6>
+                                        <table class="table table-sm table-bordered mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Amount</th>
+                                                    <th>Due Date</th>
+                                                    <th>Paid</th>
+                                                    <th>Pending</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for inst in fee.installments.all %}
+                                                <tr>
+                                                    <td>{{ inst.installment_number }}</td>
+                                                    <td>₹{{ inst.amount }}</td>
+                                                    <td>
+                                                        {% if inst.display_due_date %}
+                                                            {{ inst.display_due_date|date:"d M Y" }}
+                                                        {% else %}
+                                                            <span class="text-muted">Awaiting batch</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>₹{{ inst.paid_amount }}</td>
+                                                    <td>₹{{ inst.pending_amount }}</td>
+                                                    <td>
+                                                        {% if inst.display_status == 'paid' %}
+                                                            <span class="badge bg-success">Paid</span>
+                                                        {% elif inst.display_status == 'partial' %}
+                                                            <span class="badge bg-primary">Partial</span>
+                                                        {% elif inst.display_status == 'overdue' %}
+                                                            <span class="badge bg-danger">Overdue</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning">Pending</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% empty %}
+                            <tr><td colspan="9" class="text-center py-4 text-muted">No fee records found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade undo-modal" id="undoPaymentModal" tabindex="-1" aria-labelledby="undoPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2 px-3">
+                <h6 class="modal-title" id="undoPaymentModalLabel">Undo payment?</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-3 py-3">
+                This will remove the latest payment for this fee.
+            </div>
+            <div class="modal-footer py-2 px-3">
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-danger" id="confirmUndoPaymentBtn">Undo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const courseSelect = document.getElementById('courseSelect');
+        const batchSelect = document.getElementById('batchSelect');
+
+        if (!courseSelect || !batchSelect) return;
+
+        function filterBatches() {
+            const selectedCourse = courseSelect.value;
+
+            Array.from(batchSelect.options).forEach(option => {
+                if (!option.value) return;
+
+                const batchCourse = option.dataset.course;
+                option.style.display =
+                    !selectedCourse || batchCourse === selectedCourse
+                    ? "block"
+                    : "none";
+            });
+
+            if (batchSelect.selectedOptions.length &&
+                batchSelect.selectedOptions[0].style.display === "none") {
+                batchSelect.value = "";
+            }
+        }
+
+        courseSelect.addEventListener("change", filterBatches);
+        filterBatches();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('undoPaymentModal');
+        const confirmBtn = document.getElementById('confirmUndoPaymentBtn');
+        if (!modalEl || !confirmBtn) return;
+
+        const hasBootstrapModal = typeof bootstrap !== 'undefined' && bootstrap.Modal;
+        const modal = hasBootstrapModal ? new bootstrap.Modal(modalEl) : null;
+        let activeForm = null;
+
+        document.querySelectorAll('.undo-trigger').forEach((button) => {
+            button.addEventListener('click', () => {
+                activeForm = button.closest('form');
+                if (modal) {
+                    modal.show();
+                } else if (activeForm && window.confirm('Undo latest payment for this fee?')) {
+                    activeForm.submit();
+                }
+            });
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (activeForm) {
+                activeForm.submit();
+            }
+        });
+
+        document.querySelectorAll('.installment-parent').forEach((row) => {
+            row.addEventListener('click', function() {
+                const feeId = this.dataset.feeId;
+                const installmentRow = document.querySelector(`.installment-row[data-fee-id="${feeId}"]`);
+                
+                if (installmentRow) {
+                    if (installmentRow.style.display === 'none') {
+                        installmentRow.style.display = 'table-row';
+                        this.style.backgroundColor = '#f8f9fa';
+                    } else {
+                        installmentRow.style.display = 'none';
+                        this.style.backgroundColor = '';
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

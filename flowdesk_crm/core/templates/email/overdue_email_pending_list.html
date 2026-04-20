@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+{% block title %}Overdue Mail Pending List{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Overdue Mail Pending List</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Overdue Mail Pending List</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#overdueEmailFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .modal-open .nxl-container,
+    .modal-open .nxl-content {
+        filter: none !important;
+    }
+</style>
+
+<div class="main-content">
+    <div class="collapse border-bottom mb-4 {% if request.GET.department or request.GET.course or request.GET.batch or request.GET.amount_range or request.GET.has_email or request.GET.q or request.GET.due_from or request.GET.due_to or request.GET.per_page %}show{% endif %}" id="overdueEmailFilterPanel">
+        <div class="card card-body">
+            <form method="GET" action="{% url 'overdue_email_pending_list' %}" id="overdueEmailFilterForm">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" placeholder="Student, email, course or batch">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Department</label>
+                        <select name="department" id="overdueFilterDepartment" class="form-control">
+                            <option value="">All Departments</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:"s" %}selected{% endif %}>
+                                {{ department.department_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Course</label>
+                        <select name="course" id="overdueFilterCourse" class="form-control" {% if not selected_department %}disabled{% endif %}>
+                            <option value="">All Courses</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}"
+                                    data-department-id="{{ course.department_id }}"
+                                    {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+                                {{ course.course_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Batch</label>
+                        <select name="batch" id="overdueFilterBatch" class="form-control" {% if not selected_course %}disabled{% endif %}>
+                            <option value="">All Batches</option>
+                            {% for batch in batches %}
+                            <option value="{{ batch.id }}"
+                                    data-department-id="{{ batch.department_id|default:'' }}"
+                                    data-course-id="{{ batch.course_id|default:'' }}"
+                                    {% if selected_batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                                {{ batch.batch_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Amount Range</label>
+                        <select name="amount_range" class="form-control">
+                            <option value="">All Amounts</option>
+                            <option value="0-1000" {% if request.GET.amount_range == '0-1000' %}selected{% endif %}>0 - 1,000</option>
+                            <option value="1000-5000" {% if request.GET.amount_range == '1000-5000' %}selected{% endif %}>1,000 - 5,000</option>
+                            <option value="5000+" {% if request.GET.amount_range == '5000+' %}selected{% endif %}>5,000+</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Has Email</label>
+                        <select name="has_email" class="form-control">
+                            <option value="">All</option>
+                            <option value="yes" {% if request.GET.has_email == 'yes' %}selected{% endif %}>With Email</option>
+                            <option value="no" {% if request.GET.has_email == 'no' %}selected{% endif %}>Without Email</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Due From</label>
+                        <input type="date" name="due_from" class="form-control" value="{{ request.GET.due_from }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Due To</label>
+                        <input type="date" name="due_to" class="form-control" value="{{ request.GET.due_to }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Per Page</label>
+                        <select name="per_page" class="form-control">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12 d-flex align-items-end gap-2">
+                        <button class="btn btn-dark">Apply</button>
+                        <a href="{% url 'overdue_email_pending_list' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card"><div class="card-body"><small class="text-muted">Total Pending</small><h5 class="mb-0">{{ total_pending }}</h5></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card"><div class="card-body"><small class="text-muted">With Email</small><h5 class="mb-0 text-success">{{ with_email_count }}</h5></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card"><div class="card-body"><small class="text-muted">Without Email</small><h5 class="mb-0 text-warning">{{ without_email_count }}</h5></div></div>
+        </div>
+    </div>
+
+    {% if is_console_email_backend %}
+    <div class="alert alert-warning" role="alert">
+        Email backend is set to console mode. Mails will print in server terminal and not be delivered.
+    </div>
+    {% endif %}
+
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <form method="post" action="{% url 'send_bulk_overdue_pending_mail_action' %}" id="bulkOverdueSendForm" class="d-flex flex-wrap align-items-center gap-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" id="sendSelectedOverdueBtn" disabled>
+                    <i class="feather-send me-1"></i>
+                    Send Selected
+                </button>
+                <small class="text-muted" id="selectedOverdueCountText">0 selected</small>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" id="overdue-email-pending">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 42px;">
+                                <input type="checkbox" id="selectAllOverdueRows" aria-label="Select all overdue pending emails">
+                            </th>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>Course</th>
+                            <th>Batch</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th>Pending Amount</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in overdue_pending_list %}
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       class="overdue-mail-checkbox"
+                                       name="pending_ids"
+                                       value="{{ item.id }}"
+                                       form="bulkOverdueSendForm"
+                                       {% if not item.email %}disabled{% endif %}
+                                       aria-label="Select {{ item.student.student_name }}">
+                            </td>
+                            <td>{{ item.student.student_name }}</td>
+                            <td>{{ item.email|default:"-" }}</td>
+                            <td>{{ item.fee.course.course_name|default:"-" }}</td>
+                            <td>{{ item.batch.batch_name|default:"-" }}</td>
+                            <td>{{ item.fee.due_date|date:"d M Y"|default:"-" }}</td>
+                            <td>
+                                {% if item.days_overdue %}
+                                <span class="badge bg-soft-danger text-danger">{{ item.days_overdue }} day{{ item.days_overdue|pluralize }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.amount %}
+                                <span class="badge bg-danger">{{ item.amount }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-end align-items-center gap-2 flex-nowrap">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary overdue-preview-btn"
+                                            data-preview-url="{% url 'preview_overdue_pending_mail_action' item.id %}">
+                                        <i class="feather-eye me-1"></i>
+                                        Preview
+                                    </button>
+                                    <form method="post" action="{% url 'send_pending_mail_action' item.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-primary" {% if not item.email %}disabled{% endif %}>
+                                            <i class="feather-send me-1"></i>
+                                            Send Mail
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">No pending overdue emails found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% include "includes/report_paginator.html" with item_label="pending emails" %}
+</div>
+
+<div class="modal fade" id="overdueMailPreviewModal" tabindex="-1" aria-labelledby="overdueMailPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="overdueMailPreviewModalLabel">Overdue Mail Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <strong id="overduePreviewSubject">Subject: Loading...</strong>
+                </div>
+                <div id="overduePreviewLoading" class="text-muted">Loading preview...</div>
+                <div id="overduePreviewError" class="alert alert-danger py-2" style="display:none;"></div>
+                <iframe id="overduePreviewFrame" title="Overdue Mail Preview Content" style="width:100%; min-height:560px; border:1px solid #e9ecef; border-radius:8px; display:none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var departmentSelect = document.getElementById('overdueFilterDepartment');
+        var courseSelect = document.getElementById('overdueFilterCourse');
+        var batchSelect = document.getElementById('overdueFilterBatch');
+        var courseOptionCache = [];
+        var batchOptionCache = [];
+        var previewButtons = document.querySelectorAll('.overdue-preview-btn');
+        var selectAllCheckbox = document.getElementById('selectAllOverdueRows');
+        var rowCheckboxes = document.querySelectorAll('.overdue-mail-checkbox');
+        var sendSelectedBtn = document.getElementById('sendSelectedOverdueBtn');
+        var selectedCountText = document.getElementById('selectedOverdueCountText');
+        var bulkOverdueSendForm = document.getElementById('bulkOverdueSendForm');
+        var previewModalElement = document.getElementById('overdueMailPreviewModal');
+        var previewModal = (previewModalElement && window.bootstrap) ? new window.bootstrap.Modal(previewModalElement) : null;
+        var previewSubject = document.getElementById('overduePreviewSubject');
+        var previewLoading = document.getElementById('overduePreviewLoading');
+        var previewError = document.getElementById('overduePreviewError');
+        var previewFrame = document.getElementById('overduePreviewFrame');
+
+        function updateBulkControls() {
+            var checkedRows = Array.from(rowCheckboxes).filter(function (checkbox) {
+                return checkbox.checked;
+            });
+            var selectableRows = Array.from(rowCheckboxes).filter(function (checkbox) {
+                return !checkbox.disabled;
+            });
+            var selectedCount = checkedRows.length;
+
+            if (selectedCountText) {
+                selectedCountText.textContent = selectedCount + ' selected';
+            }
+
+            if (sendSelectedBtn) {
+                sendSelectedBtn.disabled = selectedCount === 0;
+            }
+
+            if (selectAllCheckbox) {
+                var selectableCount = selectableRows.length;
+                selectAllCheckbox.checked = selectableCount > 0 && selectedCount === selectableCount;
+                selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < selectableCount;
+                selectAllCheckbox.disabled = selectableCount === 0;
+            }
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function () {
+                rowCheckboxes.forEach(function (checkbox) {
+                    if (!checkbox.disabled) {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    }
+                });
+                updateBulkControls();
+            });
+        }
+
+        rowCheckboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('change', updateBulkControls);
+        });
+
+        if (bulkOverdueSendForm) {
+            bulkOverdueSendForm.addEventListener('submit', function (event) {
+                var selectedCount = Array.from(rowCheckboxes).filter(function (checkbox) {
+                    return checkbox.checked;
+                }).length;
+
+                if (selectedCount === 0) {
+                    event.preventDefault();
+                    return;
+                }
+
+                if (!window.confirm('Send email to ' + selectedCount + ' selected students?')) {
+                    event.preventDefault();
+                }
+            });
+        }
+
+        updateBulkControls();
+
+        function resetPreviewState() {
+            if (previewSubject) {
+                previewSubject.textContent = 'Subject: Loading...';
+            }
+            if (previewLoading) {
+                previewLoading.style.display = 'block';
+            }
+            if (previewError) {
+                previewError.style.display = 'none';
+                previewError.textContent = '';
+            }
+            if (previewFrame) {
+                previewFrame.style.display = 'none';
+                previewFrame.srcdoc = '';
+            }
+        }
+
+        previewButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                var previewUrl = button.getAttribute('data-preview-url');
+                if (!previewUrl || !previewModal) {
+                    return;
+                }
+
+                resetPreviewState();
+                previewModal.show();
+
+                fetch(previewUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(function (response) {
+                    return response.json().then(function (data) {
+                        return { ok: response.ok, data: data };
+                    });
+                }).then(function (result) {
+                    if (!result.ok || !result.data.success) {
+                        throw new Error(result.data.message || 'Failed to load preview.');
+                    }
+
+                    if (previewSubject) {
+                        previewSubject.textContent = 'Subject: ' + (result.data.subject || '-');
+                    }
+                    if (previewFrame) {
+                        previewFrame.srcdoc = result.data.html_body || '';
+                        previewFrame.style.display = 'block';
+                    }
+                }).catch(function (error) {
+                    if (previewError) {
+                        previewError.textContent = error.message || 'Could not load mail preview.';
+                        previewError.style.display = 'block';
+                    }
+                }).finally(function () {
+                    if (previewLoading) {
+                        previewLoading.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        if (!departmentSelect || !courseSelect || !batchSelect) {
+            return;
+        }
+
+        Array.from(courseSelect.options).forEach(function (option, index) {
+            if (index > 0) {
+                courseOptionCache.push({
+                    value: option.value,
+                    text: option.text,
+                    departmentId: option.dataset.departmentId || ''
+                });
+            }
+        });
+
+        Array.from(batchSelect.options).forEach(function (option, index) {
+            if (index > 0) {
+                batchOptionCache.push({
+                    value: option.value,
+                    text: option.text,
+                    departmentId: option.dataset.departmentId || '',
+                    courseId: option.dataset.courseId || ''
+                });
+            }
+        });
+
+        function repopulateCourses(selectedValue) {
+            var departmentId = departmentSelect.value;
+
+            courseSelect.innerHTML = '<option value="">All Courses</option>';
+            courseOptionCache.forEach(function (item) {
+                if (departmentId && item.departmentId !== departmentId) {
+                    return;
+                }
+                var option = document.createElement('option');
+                option.value = item.value;
+                option.text = item.text;
+                option.dataset.departmentId = item.departmentId;
+                courseSelect.appendChild(option);
+            });
+
+            courseSelect.disabled = !departmentId;
+            if (selectedValue && courseSelect.querySelector('option[value="' + selectedValue + '"]')) {
+                courseSelect.value = selectedValue;
+            } else {
+                courseSelect.value = '';
+            }
+        }
+
+        function repopulateBatches(selectedValue) {
+            var departmentId = departmentSelect.value;
+            var courseId = courseSelect.value;
+
+            batchSelect.innerHTML = '<option value="">All Batches</option>';
+            batchOptionCache.forEach(function (item) {
+                if (departmentId && item.departmentId !== departmentId) {
+                    return;
+                }
+                if (courseId && item.courseId !== courseId) {
+                    return;
+                }
+                var option = document.createElement('option');
+                option.value = item.value;
+                option.text = item.text;
+                option.dataset.departmentId = item.departmentId;
+                option.dataset.courseId = item.courseId;
+                batchSelect.appendChild(option);
+            });
+
+            batchSelect.disabled = !courseId;
+            if (selectedValue && batchSelect.querySelector('option[value="' + selectedValue + '"]')) {
+                batchSelect.value = selectedValue;
+            } else {
+                batchSelect.value = '';
+            }
+        }
+
+        var initialCourse = courseSelect.value;
+        var initialBatch = batchSelect.value;
+
+        repopulateCourses(initialCourse);
+        repopulateBatches(initialBatch);
+
+        departmentSelect.addEventListener('change', function () {
+            repopulateCourses('');
+            repopulateBatches('');
+        });
+
+        courseSelect.addEventListener('change', function () {
+            repopulateBatches('');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block title %}View Attendance{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">View Attendance</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">View Attendance</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .att-report-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .att-card {
+        border: 1px solid #dbe3ef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .att-toolbar {
+        padding: 16px 18px;
+        border-bottom: 1px solid #e6edf7;
+        background: #f8fbff;
+        border-radius: 14px 14px 0 0;
+    }
+
+    .stat-box {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 12px;
+        min-width: 130px;
+    }
+
+    .stat-box small {
+        display: block;
+        color: #64748b;
+    }
+
+    .stat-box strong {
+        font-size: 1.05rem;
+    }
+
+    .status-badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-present { background: #e6f8f1; color: #047857; }
+    .status-absent { background: #ffe8ee; color: #be123c; }
+    .status-leave { background: #fff6dc; color: #a16207; }
+    .status-late { background: #e8f0ff; color: #1d4ed8; }
+
+
+
+    
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+</style>
+
+<div class="container-fluid py-4">
+    <div class="att-report-wrap">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Attendance Details</h4>
+            {% if is_session_view %}
+                <a href="{% url 'session_update_list' %}" class="btn btn-outline-secondary">Back to Session History</a>
+            {% endif %}
+        </div>
+
+        <div class="att-card">
+            <div class="att-toolbar">
+                {% if not is_session_view %}
+                    <form method="get" class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label mb-1">Select Batch</label>
+                            <select name="batch" class="form-select" required>
+                                <option value="">Choose batch</option>
+                                {% for batch in batches %}
+                                    <option value="{{ batch.id }}" {% if selected_batch and selected_batch.id == batch.id %}selected{% endif %}>
+                                        {{ batch.batch_name }}{% if batch.course %} - {{ batch.course.course_name }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-1">Select Date</label>
+                            <input type="date" name="date" value="{{ selected_date|default:'' }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100">View</button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#monthlyViewModal">Monthly View</button>
+                        </div>
+                    </form>
+                {% endif %}
+
+                {% if selected_batch and selected_date %}
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <div class="stat-box"><small>Batch</small><strong>{{ selected_batch.batch_name }}</strong></div>
+                        <div class="stat-box"><small>Date</small><strong>{{ selected_date }}</strong></div>
+                        <div class="stat-box"><small>Present</small><strong class="text-success">{{ present_count }}</strong></div>
+                        <div class="stat-box"><small>Absent</small><strong class="text-danger">{{ absent_count }}</strong></div>
+                        <div class="stat-box"><small>Leave</small><strong class="text-warning">{{ leave_count }}</strong></div>
+                        
+                        <div class="stat-box"><small>Total Records</small><strong>{{ attendance_records|length }}</strong></div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="table-responsive p-3">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 70px;">#</th>
+                            <th>Student Name</th>
+                            <th style="width: 140px;">Attendance</th>
+                            <th style="width: 200px;">Marked</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if attendance_records %}
+                            {% for record in attendance_records %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ record.student.student_name }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ record.status }}">{{ record.status }}</span>
+                                    </td>
+                                    <td>{{ record.marked_by.get_full_name|default:record.marked_by.username|default:"-" }}</td>
+                                    <td>{{ record.remarks|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    {% if selected_batch and selected_date %}
+                                        No attendance records found for selected batch and date.
+                                    {% else %}
+                                        Select batch and date to view attendance details.
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not is_session_view %}
+    <!-- Monthly View Modal -->
+    <div class="modal fade" id="monthlyViewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Monthly Attendance View</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="monthlyViewForm" class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Select Batch</label>
+                            <select name="batch" id="monthlyBatch" class="form-select" required>
+                                <option value="">Choose batch</option>
+                                {% for batch in batches %}
+                                    <option value="{{ batch.id }}">{{ batch.batch_name }}{% if batch.course %} - {{ batch.course.course_name }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Select Month</label>
+                            <input type="month" name="month" id="monthlyMonth" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">Load</button>
+                        </div>
+                    </form>
+                    <div id="monthlyAttendanceTable"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+const monthlyViewForm = document.getElementById('monthlyViewForm');
+
+if (monthlyViewForm) {
+    monthlyViewForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const batchId = document.getElementById('monthlyBatch').value;
+        const month = document.getElementById('monthlyMonth').value;
+        
+        if (!batchId || !month) {
+            alert('Please select both batch and month');
+            return;
+        }
+        
+        fetch(`/attendance/monthly/?batch=${batchId}&month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('monthlyAttendanceTable').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    return;
+                }
+                
+                let html = '<div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr><th>Student Name</th>';
+                
+                // Add day headers
+                for (let day = 1; day <= data.days_in_month; day++) {
+                    html += `<th class="text-center" style="min-width:35px;">${day}</th>`;
+                }
+                html += '</tr></thead><tbody>';
+                
+                // Add student rows
+                data.students.forEach(student => {
+                    html += `<tr><td>${student.name}</td>`;
+                    for (let day = 1; day <= data.days_in_month; day++) {
+                        const att = student.attendance[day];
+                        let cellClass = '';
+                        let cellText = '-';
+                        if (att) {
+                            if (att === 'present') { cellClass = 'bg-success text-white'; cellText = 'P'; }
+                            else if (att === 'absent') { cellClass = 'bg-danger text-white'; cellText = 'A'; }
+                            else if (att === 'leave') { cellClass = 'bg-warning'; cellText = 'L'; }
+                            else if (att === 'late') { cellClass = 'bg-info text-white'; cellText = 'Lt'; }
+                        }
+                        html += `<td class="text-center ${cellClass}">${cellText}</td>`;
+                    }
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+                html += '<div class="mt-3"><small><span class="badge bg-success">P</span> Present &nbsp; <span class="badge bg-danger">A</span> Absent &nbsp; <span class="badge bg-warning text-dark">L</span> Leave &nbsp;</div>';
+                
+                document.getElementById('monthlyAttendanceTable').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('monthlyAttendanceTable').innerHTML = `<div class="alert alert-danger">Error loading data</div>`;
+            });
+    });
+}
+</script>
+{% endblock %}

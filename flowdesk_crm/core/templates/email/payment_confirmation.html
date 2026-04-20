@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Confirmation - {{ company_name }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+        .header {
+            background: linear-gradient(135deg, #1f4e78 0%, #1e40af 100%);
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 32px 24px;
+        }
+        .success-icon {
+            color: #16a34a;
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .payment-details {
+            background: #f0fdf4;
+            padding: 24px;
+            border-radius: 8px;
+            margin: 24px 0;
+            border-left: 4px solid #16a34a;
+        }
+        .student-id-highlight {
+            text-align: center;
+            margin: 0 auto 20px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 600;
+            width: fit-content;
+        }
+        .student-id-highlight span {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: #1e3a8a;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .payment-details h3 {
+            color: #1e293b;
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #16a34a;
+            margin: 8px 0;
+        }
+        .fee-summary {
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 8px;
+            margin: 24px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .fee-summary h3 {
+            color: #1e293b;
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .fee-row:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .fee-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        .fee-value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+        .footer {
+            text-align: center;
+            padding: 24px;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .info-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .info-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .info-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .badge-warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .alert {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+            border-left: 4px solid;
+        }
+        .alert-warning {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
+        .alert-success {
+            background: #f0fdf4;
+            border-left-color: #16a34a;
+            color: #166534;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .fee-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment Confirmation</h1>
+            <p>{{ company_name }}</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">✅</div>
+            
+            <h2 style="text-align: center; color: #1e293b; margin: 0 0 24px 0;">Dear {{ student.student_name }},</h2>
+            <div class="student-id-highlight">Student ID <span>#{{ student.id }}</span></div>
+            
+            <p style="text-align: center; font-size: 16px; color: #64748b; margin-bottom: 32px;">Thank you for your payment! We have successfully received your payment for <strong>{{ fee_record.course.course_name }}</strong>.</p>
+            
+            <div class="payment-details">
+                <h3>💳 Payment Details</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Amount Paid</div>
+                        <div class="info-value amount">₹{{ payment.amount_paid }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Payment Date</div>
+                        <div class="info-value">{{ payment.payment_date|date:"d M Y" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Payment Mode</div>
+                        <div class="info-value"><span class="badge badge-success">{{ payment.get_payment_mode_display }}</span></div>
+                    </div>
+                    {% if payment.remarks %}
+                    <div class="info-item">
+                        <div class="info-label">Remarks</div>
+                        <div class="info-value">{{ payment.remarks }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="fee-summary">
+                <h3>📊 Fee Summary</h3>
+                <div class="fee-row">
+                    <span class="fee-label">Total Course Fee:</span>
+                    <span class="fee-value">₹{{ fee_record.total_fee }}</span>
+                </div>
+                <div class="fee-row">
+                    <span class="fee-label">Total Paid:</span>
+                    <span class="fee-value text-success">₹{{ fee_record.paid_amount }}</span>
+                </div>
+                <div class="fee-row">
+                    <span class="fee-label">Remaining Balance:</span>
+                    <span class="fee-value">₹{{ fee_record.pending_amount }}</span>
+                </div>
+            </div>
+            
+            {% if fee_record.pending_amount > 0 %}
+            <div class="alert alert-warning">
+                <p style="margin: 0;"><strong>Note:</strong> You still have a pending balance of <strong>₹{{ fee_record.pending_amount }}</strong>. Please make the remaining payment by the due date to avoid any inconvenience.</p>
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                <p style="margin: 0;"><strong>Congratulations!</strong> You have completed all payments for this course. Thank you for your prompt payment!</p>
+            </div>
+            {% endif %}
+            
+            <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin: 24px 0; border: 1px solid #e2e8f0;">
+                <h3 style="color: #1e293b; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">📞 Need Help?</h3>
+                <p style="margin: 0 0 16px 0;">If you have any questions about your payment or need assistance, please don't hesitate to contact us.</p>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">support@flowdesk.com</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">+91 9876543210</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 32px;">
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 8px;">Thank you for choosing {{ company_name }}!</p>
+                <p style="margin: 0;">Best regards,<br>
+                <strong style="color: #1e293b;">{{ company_name }} Team</strong></p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email. Please do not reply to this email.</p>
+            <p>&copy; {{ company_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

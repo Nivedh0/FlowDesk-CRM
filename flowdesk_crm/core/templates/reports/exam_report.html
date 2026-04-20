@@ -1,0 +1,710 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Exam Report{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Exam Report</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Exam Report</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="#" id="exportExcelBtn" class="btn btn-success">
+                    <i class="feather-download me-2"></i>
+                    <span>Export Excel</span>
+                </a>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="row">
+        <!-- [Mini Cards] start -->
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Total Exams</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ total_count }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-primary">
+                            <i class="feather-file-text fs-12"></i>
+                            <span>All</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Total Attempts</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ total_attempts|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-info">
+                            <i class="feather-edit fs-12"></i>
+                            <span>All</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Completed</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ completed_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-success">
+                            <i class="feather-check-circle fs-12"></i>
+                            <span>Done</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Pending</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{{ pending_count|default:0 }}</span></h3>
+                        <div class="hstack gap-2 fs-11 text-warning">
+                            <i class="feather-clock fs-12"></i>
+                            <span>Waiting</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Average Score</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{% if total_attempts > 0 %}{{ average_score|floatformat:0 }}{% else %}0{% endif %}</span>%</h3>
+                        <div class="hstack gap-2 fs-11 {% if average_score > 70 %}text-success{% else %}text-muted{% endif %}">
+                            <i class="feather-trending-up fs-12"></i>
+                            <span>Avg</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-2 col-lg-4 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="fs-12 fw-medium text-muted mb-3">Pass Rate</div>
+                    <div class="hstack justify-content-between lh-base">
+                        <h3><span class="counter">{% if total_attempts > 0 %}{{ pass_rate|floatformat:0 }}{% else %}0{% endif %}</span>%</h3>
+                        <div class="hstack gap-2 fs-11 {% if pass_rate > 70 %}text-success{% else %}text-muted{% endif %}">
+                            <i class="feather-award fs-12"></i>
+                            <span>Pass</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [Mini Cards] end -->
+
+        <!-- [Charts] start -->
+        <div class="col-lg-6">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Exam Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="exam-status-chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Exam Performance by Batch</h5>
+                </div>
+                <div class="card-body">
+                    <div id="batch-performance-chart"></div>
+                </div>
+            </div>
+        </div>
+        <!-- [Charts] end -->
+
+        <!-- [Exam Details Table] start -->
+        <div class="col-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header">
+                    <h5 class="card-title">Exam Details</h5>
+                    <div class="card-header-action">
+                        <div class="card-header-btn">
+                            <div data-bs-toggle="tooltip" title="Filter">
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#examReportFilterPanel">
+                                    <i class="feather-filter"></i>
+                                </button>
+                            </div>
+                            <div data-bs-toggle="tooltip" title="Column Settings">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="new bootstrap.Modal(document.getElementById('columnSettingsModal')).show()">
+                                    <i class="feather-settings"></i>
+                                </button>
+                            </div>
+                            <div data-bs-toggle="tooltip" title="Refresh">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" onclick="location.reload()"> </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [Filter Panel] start -->
+                <div class="collapse" id="examReportFilterPanel">
+                    <div class="card-body border-top">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Search</label>
+                                <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Exam title">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Batch</label>
+                                <select name="batch" class="form-select">
+                                    <option value="">All</option>
+                                    {% for b in batches %}
+                                    <option value="{{ b.id }}" {% if request.GET.batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.batch_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Exam From</label>
+                                <input type="date" name="exam_from" value="{{ request.GET.exam_from }}" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Exam To</label>
+                                <input type="date" name="exam_to" value="{{ request.GET.exam_to }}" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">All</option>
+                                    <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+                                    <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pending</option>
+                                    <option value="upcoming" {% if request.GET.status == "upcoming" %}selected{% endif %}>Upcoming</option>
+                                </select>
+                            </div>
+                            {% if can_filter_created_by %}
+                            <div class="col-md-3">
+                                <label class="form-label">Created By</label>
+                                <select name="created_by" class="form-select">
+                                    <option value="">All</option>
+                                    {% for u in exam_creators %}
+                                    <option value="{{ u.id }}" {% if request.GET.created_by == u.id|stringformat:"s" %}selected{% endif %}>{{ u.user.get_full_name|default:u.user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            <div class="col-md-2">
+                                <label class="form-label">Per Page</label>
+                                <select name="per_page" class="form-select">
+                                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 d-flex justify-content-end gap-2">
+                                <button class="btn btn-primary" type="submit">Apply Filter</button>
+                                <a href="{% url 'exam_report' %}" class="btn btn-outline-secondary">Clear</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <!-- [Filter Panel] end -->
+                <div class="card-body custom-card-action p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="examReportTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col" data-col="exam">Exam</th>
+                                    <th scope="col" data-col="batch">Batch</th>
+                                    <th scope="col" data-col="exam_date">Exam Date</th>
+                                    <th scope="col" data-col="duration">Duration</th>
+                                    <th scope="col" data-col="total_marks">Total Marks</th>
+                                    <th scope="col" data-col="created_by">Created By</th>
+                                    <th scope="col" data-col="total_students">Total Students</th>
+                                    <th scope="col" data-col="attempted">Attempted</th>
+                                    <th scope="col" data-col="pending">Pending</th>
+                                    <th scope="col" data-col="avg_score">Avg Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exam in exams %}
+                                <tr>
+                                    <td data-col="exam">{{ exam.title }}</td>
+                                    <td data-col="batch">{{ exam.batch.batch_name|default:"-" }}</td>
+                                    <td data-col="exam_date">{{ exam.exam_date|date:"d M Y"|default:"-" }}</td>
+                                    <td data-col="duration">-</td>
+                                    <td data-col="total_marks">{{ exam.max_marks|default:"-" }}</td>
+                                    <td data-col="created_by">{{ exam.created_by.user.get_full_name|default:exam.created_by.user.username|default:"-" }}</td>
+                                    <td data-col="total_students">{{ exam.total_students|default:0 }}</td>
+                                    <td data-col="attempted">{{ exam.attempted_students|default:0 }}</td>
+                                    <td data-col="pending">{{ exam.pending_students|default:0 }}</td>
+                                    <td data-col="avg_score">{% if exam.average_score %}{{ exam.average_score|floatformat:1 }}%{% else %}-{% endif %}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">No exams found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="pagination-row">
+                    <nav class="pagination-glass">
+                        <ul class="pagination pagination-modern mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                    ‹ Previous
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">‹ Previous</span>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                    <a class="page-link"
+                                    href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                    Next ›
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next ›</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    <div class="pagination-info">
+                        Showing
+                        <strong>{{ page_obj.start_index }}</strong>
+                        –
+                        <strong>{{ page_obj.end_index }}</strong>
+                        of
+                        <strong>{{ paginator.count }}</strong>
+                        exams
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [Exam Details Table] end -->
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;">
+            <div class="modal-header">
+                <h5 class="modal-title">Table Columns</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-semibold mb-0">Visible Columns</h6>
+                    <label class="d-flex align-items-center gap-2 text-primary fw-semibold cursor-pointer">
+                        <input type="checkbox" id="selectAllColumns">
+                        Select All
+                    </label>
+                </div>
+                <hr class="my-2">
+                <div class="row g-3">
+                    <div class="col-md-6 column-group">
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="exam" checked><span>Exam</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="batch" checked><span>Batch</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="exam_date" checked><span>Exam Date</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="duration" checked><span>Duration</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="total_marks" checked><span>Total Marks</span></label>
+                    </div>
+                    <div class="col-md-6 column-group">
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="created_by" checked><span>Created By</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="total_students" checked><span>Total Students</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="attempted" checked><span>Attempted</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="pending" checked><span>Pending</span></label>
+                        <label class="column-item"><input type="checkbox" class="column-toggle" data-col="avg_score" checked><span>Avg Score</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" onclick="cancelColumnSettings()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyColumnSettings()">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-open .nxl-container,
+.modal-open .nxl-content {
+    filter: none !important;
+}
+
+.column-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.column-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.column-item:hover {
+    background: #f1f5f9;
+}
+
+.column-item input {
+    transform: scale(1.1);
+}
+
+.column-item span {
+    font-weight: 500;
+    color: #334155;
+}
+
+#selectAllColumns {
+    transform: scale(1.15);
+}
+
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggles = document.querySelectorAll(".column-toggle");
+    const selectAllCheckbox = document.getElementById("selectAllColumns");
+    let savedColumnState = {};
+
+    function getCurrentState() {
+        const state = {};
+        toggles.forEach(t => {
+            state[t.dataset.col] = t.checked;
+        });
+        return state;
+    }
+
+    function setState(state) {
+        toggles.forEach(t => {
+            if (state.hasOwnProperty(t.dataset.col)) {
+                t.checked = state[t.dataset.col];
+            }
+        });
+    }
+
+    function applyColumnVisibility() {
+        toggles.forEach(toggle => {
+            const col = toggle.dataset.col;
+            const show = toggle.checked;
+
+            document
+                .querySelectorAll(`#examReportTable th[data-col="${col}"]`)
+                .forEach(el => el.style.display = show ? "" : "none");
+
+            document
+                .querySelectorAll(`#examReportTable td[data-col="${col}"]`)
+                .forEach(el => el.style.display = show ? "" : "none");
+        });
+    }
+
+    function syncSelectAll() {
+        const allChecked = Array.from(toggles).every(t => t.checked);
+        const noneChecked = Array.from(toggles).every(t => !t.checked);
+
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = !allChecked && !noneChecked;
+    }
+
+    selectAllCheckbox.addEventListener("change", function () {
+        toggles.forEach(t => {
+            t.checked = this.checked;
+        });
+    });
+
+    toggles.forEach(t => {
+        t.addEventListener("change", syncSelectAll);
+    });
+
+    window.applyColumnSettings = function () {
+        savedColumnState = getCurrentState();
+        applyColumnVisibility();
+        updateExportLink();
+        bootstrap.Modal.getInstance(
+            document.getElementById("columnSettingsModal")
+        ).hide();
+    };
+
+    window.cancelColumnSettings = function () {
+        setState(savedColumnState);
+        bootstrap.Modal.getInstance(
+            document.getElementById("columnSettingsModal")
+        ).hide();
+    };
+
+    function updateExportLink() {
+        const visibleColumns = [];
+        toggles.forEach(t => {
+            if (t.checked) {
+                visibleColumns.push(t.dataset.col);
+            }
+        });
+        
+        const baseUrl = "{% url 'exam_report_export' %}";
+        const params = new URLSearchParams(window.location.search);
+        
+        params.delete('columns');
+        
+        visibleColumns.forEach(col => {
+            params.append('columns', col);
+        });
+        
+        const exportBtn = document.getElementById('exportExcelBtn');
+        exportBtn.href = baseUrl + '?' + params.toString();
+    }
+
+    savedColumnState = getCurrentState();
+    applyColumnVisibility();
+    syncSelectAll();
+    updateExportLink();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.textContent);
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                counter.textContent = target;
+                clearInterval(timer);
+            } else {
+                counter.textContent = Math.floor(current);
+            }
+        }, 20);
+    });
+
+    // Exam Status Distribution Chart
+    const statusData = [
+        {% for item in status_distribution %}
+        { name: '{{ item.status|default:"Unknown" }}', value: {{ item.count }} }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (statusData.length > 0 && typeof ApexCharts !== 'undefined') {
+        const statusChart = new ApexCharts(document.querySelector("#exam-status-chart"), {
+            series: statusData.map(item => item.value),
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            labels: statusData.map(item => item.name),
+            colors: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'],
+            legend: {
+                position: 'bottom'
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return Math.round(val) + '%';
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%'
+                    }
+                }
+            }
+        });
+        statusChart.render();
+    }
+
+    // Exam Performance by Batch Chart
+    const batchPerformance = [
+        {% for item in batch_performance %}
+        { batch: '{{ item.batch_name }}', score: {{ item.average_score }} }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (batchPerformance.length > 0 && typeof ApexCharts !== 'undefined') {
+        const batchChart = new ApexCharts(document.querySelector("#batch-performance-chart"), {
+            series: [{
+                name: 'Average Score',
+                data: batchPerformance.map(item => item.score)
+            }],
+            chart: {
+                type: 'bar',
+                height: 300
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    distributed: true,
+                    dataLabels: {
+                        position: 'top'
+                    }
+                }
+            },
+            colors: ['#10b981', '#3b82f6', '#06b6d4', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#6366f1', '#f43f5e'],
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return val + '%';
+                },
+                offsetX: 30,
+                style: {
+                    fontSize: '12px',
+                    colors: ['#304758']
+                }
+            },
+            xaxis: {
+                categories: batchPerformance.map(item => item.batch),
+                max: 100,
+                labels: {
+                    formatter: function(val) {
+                        return val + '%';
+                    }
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontSize: '11px'
+                    }
+                }
+            },
+            legend: {
+                show: false
+            },
+            tooltip: {
+                y: {
+                    formatter: function(val) {
+                        return val + '% average';
+                    }
+                }
+            }
+        });
+        batchChart.render();
+    }
+});
+</script>
+{% endblock %}

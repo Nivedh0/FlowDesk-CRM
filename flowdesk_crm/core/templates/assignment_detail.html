@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Assignment Detail{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Assignment Detail</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assignment_list' %}">Assignments</a></li>
+            <li class="breadcrumb-item">Detail</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .assignment-wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .assignment-head {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    }
+
+    .assignment-head h5 {
+        margin-bottom: 6px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .assignment-head .meta {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .assignment-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
+    }
+
+    .assignment-table {
+        margin-bottom: 0;
+    }
+
+    .assignment-table thead th {
+        background: #f8fafc;
+        color: #374151;
+        border-color: #e5e7eb;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .assignment-table td,
+    .assignment-table th {
+        vertical-align: middle;
+    }
+
+    .assignment-table tbody tr:hover {
+        background: #fafafa;
+    }
+
+    .assignment-actions {
+        border-top: 1px solid #e5e7eb;
+        padding: 12px 16px;
+        background: #fff;
+    }
+</style>
+
+<div class="nxl-content">
+<div class="main-content">
+<div class="assignment-wrap">
+<div class="assignment-head">
+    <h5>{{ assignment.title }}</h5>
+    <p class="mb-0 meta">
+        Batch: {{ assignment.batch.batch_name }} | 
+        Session Date: {{ assignment.session.session_date }} | 
+        Due Date: {{ assignment.due_date }} |
+        Total Marks: {{ assignment.session.assignment_marks|default:"-" }}
+    </p>
+    {% if assignment.description %}
+    <p class="mt-2">{{ assignment.description }}</p>
+    {% endif %}
+</div>
+
+<div class="assignment-card">
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="table-responsive p-3">
+            <table class="table table-bordered assignment-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">#</th>
+                        <th>Student Name</th>
+                        <th style="width: 220px;">Status</th>
+                        <th style="width: 190px;">Submitted Date</th>
+                        <th>Marks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ submission.student.student_name }}</td>
+                        <td>
+                            <select name="status_{{ submission.id }}" class="form-select form-select-sm">
+                                <option value="pending" {% if submission.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="submitted" {% if submission.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                                <option value="not_submitted" {% if submission.status == 'not_submitted' %}selected{% endif %}>Not Submitted</option>
+                            </select>
+                        </td>
+                        <td>
+                            {% if submission.submitted_date %}
+                                {{ submission.submitted_date|date:"d-m-Y H:i" }}
+                                    {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <input type="number" name="remarks_{{ submission.id }}" 
+                                   value="{{ submission.remarks|default:'' }}" 
+                                   class="form-control form-control-sm" 
+                                   min="0"
+                                   placeholder="Enter marks">
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No students in this batch</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="assignment-actions d-flex justify-content-end gap-2">
+            <a href="{% url 'assignment_list' %}" class="btn btn-light">Back to List</a>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}

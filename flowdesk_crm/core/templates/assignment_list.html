@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Assignments</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Assignments</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-light-brand" type="button" data-bs-toggle="collapse" data-bs-target="#assignmentFilterPanel" style="display:flex;align-items:center;gap:8px;">
+                    <i class="feather-filter" style="font-size:16px;"></i>
+                    <span>FILTER</span>
+                </button>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <div class="card stretch stretch-full">
+        <div class="card-body p-0">
+
+            <div class="d-flex align-items-center justify-content-between px-3 py-3">
+                <h5 class="mb-0">Assignment Tracking</h5>
+
+                <form method="GET" class="d-flex align-items-center gap-2">
+                    {% for key, value in request.GET.items %}
+                        {% if key != 'q' and key != 'page' %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <label class="mb-0 fw-semibold">Search:</label>
+                    <input type="text"
+                           name="q"
+                           value="{{ request.GET.q }}"
+                           class="form-control"
+                           placeholder="Search assignment / batch / creator"
+                           style="width:250px;height:38px;">
+                    <button type="submit" class="btn btn-light-brand" style="height:38px;">
+                        <i class="feather-search"></i>
+                    </button>
+                </form>
+
+                
+            </div>
+
+            <div class="collapse border-top px-3 py-3" id="assignmentFilterPanel">
+                <form method="GET" action="{% url 'assignment_list' %}">
+                    {% if request.GET.q %}
+                        <input type="hidden" name="q" value="{{ request.GET.q }}">
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Due Date From</label>
+                            <input type="date"
+                                   name="date_from"
+                                   value="{{ request.GET.date_from }}"
+                                   class="form-control">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Due Date To</label>
+                            <input type="date"
+                                   name="date_to"
+                                   value="{{ request.GET.date_to }}"
+                                   class="form-control">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Course</label>
+                            <select name="course"
+                                    id="filterCourse"
+                                    class="form-control"
+                                    onchange="handleAssignmentCourseChange()">
+                                <option value="">All</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}"
+                                            {% if request.GET.course == course.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ course.course_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Batch</label>
+                            <select name="batch"
+                                    id="filterBatch"
+                                    class="form-control">
+                                <option value="">All</option>
+                                {% for batch in batches %}
+                                    <option value="{{ batch.id }}"
+                                            data-course="{{ batch.course_id }}"
+                                            {% if request.GET.batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ batch.batch_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {% if can_filter_created_by %}
+                        <div class="col-md-3">
+                            <label class="form-label">Created By</label>
+                            <select name="created_by" class="form-control">
+                                <option value="">All</option>
+                                {% for creator in assignment_creators %}
+                                    <option value="{{ creator.id }}"
+                                            {% if request.GET.created_by == creator.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ creator.user.get_full_name|default:creator.user.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                            <button class="btn btn-dark" type="submit">Apply Filter</button>
+                            <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary">Clear</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <form method="GET" class="d-flex align-items-center gap-2 px-3">
+                {% for key, value in request.GET.items %}
+                    {% if key != 'per_page' and key != 'page' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+
+                <label class="fw-semibold mb-0">Show</label>
+
+                <select name="per_page"
+                        class="form-control"
+                        style="width:90px;"
+                        onchange="this.form.submit()">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                </select>
+
+                <span class="fw-semibold">entries</span>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Assignment</th>
+                            <th>Batch</th>
+                            <th>Course</th>
+                            <th>Session Date</th>
+                            <th>Due Date</th>
+                            <th>Created By</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in assignments %}
+                        <tr>
+                            <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                            <td>{{ assignment.title }}</td>
+                            <td>{{ assignment.batch.batch_name }}</td>
+                            <td>{{ assignment.batch.course.course_name|default:"-" }}</td>
+                            <td>{{ assignment.session.session_date|date:"d M Y" }}</td>
+                            <td>{{ assignment.due_date|date:"d M Y" }}</td>
+                            <td>{{ assignment.created_by.user.get_full_name|default:assignment.created_by.user.username }}</td>
+                            <td class="text-end">
+                                <div class="assignment-actions">
+                                    <a href="{% url 'assignment_detail' assignment.id %}" class="action-circle" title="View Details">
+                                        <i class="feather-eye"></i>
+                                    </a>
+                                    
+                                    {% if request.user.userprofile.role == 'admin' %}
+                                    <form method="post" action="{% url 'delete_assignment' assignment.id %}" class="d-inline-block m-0">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="action-circle action-circle-danger"
+                                                title="Delete Assignment"
+                                                onclick="return confirm('Delete this assignment?');">
+                                            <i class="feather-trash-2"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No assignments found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if page_obj.paginator.num_pages > 1 %}
+                <div class="pagination-row">
+                    <nav class="pagination-glass">
+                        <ul class="pagination pagination-modern mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num >= page_obj.number|add:-1 and num <= page_obj.number|add:1 %}
+                                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                    <a class="page-link"
+                                       href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                    Next
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+
+                    <div class="pagination-info">
+                        Showing
+                        <strong>{{ page_obj.start_index }}</strong>
+                        -
+                        <strong>{{ page_obj.end_index }}</strong>
+                        of
+                        <strong>{{ paginator.count }}</strong>
+                        assignments
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    
+.pagination-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 24px 0;
+}
+
+/* ================= GLASS CONTAINER ================= */
+
+.pagination-glass {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+/* ================= PAGINATION LIST ================= */
+
+.pagination-modern {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ================= PAGE BUTTONS ================= */
+
+.pagination-modern .page-link {
+    border: none;
+    background: transparent;
+    color: #475569;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+/* hover */
+.pagination-modern .page-link:hover {
+    background: rgba(99,102,241,0.15);
+    color: #4f46e5;
+}
+
+/* active bubble */
+.pagination-modern .page-item.active .page-link {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+}
+
+/* disabled */
+.pagination-modern .page-item.disabled .page-link {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+/* ================= INFO TEXT ================= */
+
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ================= ONE LINE PAGINATION ================= */
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 24px 0;
+}
+
+/* keep paginator centered */
+.pagination-row nav {
+    margin: 0 auto;
+}
+
+/* info text */
+.pagination-info {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.assignment-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.action-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.action-circle:hover {
+    background: #f8fafc;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+}
+
+.action-circle-danger {
+    color: #dc2626;
+}
+
+.action-circle-danger:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+</style>
+<script>
+function handleAssignmentCourseChange(isInitialLoad = false) {
+    const courseSelect = document.getElementById("filterCourse");
+    const batchSelect = document.getElementById("filterBatch");
+
+    if (!courseSelect || !batchSelect) return;
+
+    const selectedCourse = courseSelect.value;
+
+    Array.from(batchSelect.options).forEach(option => {
+        option.style.display = "block";
+    });
+
+    if (!selectedCourse) {
+        return;
+    }
+
+    Array.from(batchSelect.options).forEach(option => {
+        if (!option.value) return;
+
+        const optionCourse = option.getAttribute("data-course");
+        option.style.display = optionCourse === selectedCourse ? "block" : "none";
+    });
+
+    if (!isInitialLoad) {
+        batchSelect.value = "";
+    }
+}
+
+const assignmentFilterPanel = document.getElementById("assignmentFilterPanel");
+if (assignmentFilterPanel) {
+    assignmentFilterPanel.addEventListener("shown.bs.collapse", function () {
+        handleAssignmentCourseChange(true);
+    });
+}
+
+window.addEventListener("load", function () {
+    setTimeout(() => handleAssignmentCourseChange(true), 50);
+});
+</script>
+
+{% endblock %}

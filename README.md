@@ -93,7 +93,7 @@ FlowDesk CRM is a full-featured Customer Relationship Management system designed
 | Auth | Django Auth + Custom Role System |
 
 ---
-
+<!--
 ## Project Structure
 
 ```
@@ -222,7 +222,7 @@ Visit `http://127.0.0.1:8000` in your browser.
 
 
 ---
-
+-->
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
